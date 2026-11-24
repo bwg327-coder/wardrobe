@@ -241,7 +241,16 @@ async function storageInfo(){
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; $('#install-sec')?.removeAttribute('hidden'); });
 window.addEventListener('appinstalled',()=>{ installEvt=null; toast('홈 화면에 설치했습니다'); });
 if('serviceWorker' in navigator && location.protocol!=='file:'){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+      // 앱으로 돌아올 때마다 새 버전 확인
+      document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') reg.update().catch(()=>{}); });
+    }).catch(()=>{});
+  });
+  // 새 버전이 적용되면 한 번 새로고침 (시트가 열려 있거나 입력 중이면 다음에 화면으로 돌아올 때)
+  let hadCtrl=!!navigator.serviceWorker.controller, reloaded=false;
+  const reloadNow=()=>{ if(reloaded) return; if(sheetOpen()){ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') reloadNow(); },{once:true}); return; } reloaded=true; location.reload(); };
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(hadCtrl) reloadNow(); hadCtrl=true; });
 }
 
 /* ---------- 첫 실행 화면 ---------- */

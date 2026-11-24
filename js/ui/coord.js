@@ -36,7 +36,7 @@ export function renderCoord(){
   ${CATS.map(k=>{
     const items=S.items.filter(i=>i.cat===k).sort((a,b)=>a.order-b.order); const c=cur[k];
     return `<div class="pick gx">
-      <div class="pick-h"><span class="t">${CAT[k]}</span><span class="s">${c?(isRec(k)?'<em>추천</em> ':'')+esc(c.name)+' ['+esc(c.colorName)+']':(k in u.lock?'선택 안 함':'-')}</span>
+      <div class="pick-h"><span class="t">${CAT[k]}</span><span class="s">${c?esc(c.name)+' ['+esc(c.colorName)+']':(k in u.lock?'선택 안 함':'-')}</span>
         <span class="pager"><button data-scroll="${k}" data-d="-1" aria-label="${CAT[k]} 이전 목록">${IC.left}</button><button data-scroll="${k}" data-d="1" aria-label="${CAT[k]} 다음 목록">${IC.right}</button></span></div>
       <div class="strip" data-strip="${k}" role="group" aria-label="${CAT[k]} 선택">
         <button class="opt" data-pick="${k}" data-id="" aria-pressed="${!c && (k in u.lock)}"><span class="none">없음</span><span class="lab">생략</span></button>
