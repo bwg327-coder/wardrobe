@@ -320,3 +320,8 @@ main{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolli
 .confirm.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.6fr);gap:8px}
 .confirm .btn-line{background:#fff}
 .stage + .pick{margin-top:18px}
+.lbl-pager{display:flex !important;align-items:center;justify-content:space-between}
+.lbl-pager .pager{display:flex;margin:-8px -10px -8px 0}
+.wash-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wash-row .chip{height:44px}
+.shapes{position:relative}

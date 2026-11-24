@@ -7,11 +7,12 @@ import { IC } from './common.js';
 
 export const SORTS=[['custom','나의 정렬순'],['most','착장 많은 순'],['least','착장 적은 순'],['wash','세탁 필요 순']];
 const rank={due:0,soon:1,ok:2};
+const ratio=x=>x.i.wash? x.s.since/x.i.wash : -1; // 세탁 기준 없는 옷은 맨 뒤
 const sorters={
   custom:(a,b)=>a.i.order-b.i.order,
   most:(a,b)=>b.s.total-a.s.total||a.i.order-b.i.order,
   least:(a,b)=>a.s.total-b.s.total||a.i.order-b.i.order,
-  wash:(a,b)=>rank[a.s.state]-rank[b.s.state]||b.s.since/b.i.wash-a.s.since/a.i.wash||a.i.order-b.i.order,
+  wash:(a,b)=>rank[a.s.state]-rank[b.s.state]||ratio(b)-ratio(a)||a.i.order-b.i.order,
 };
 
 export function renderWardrobe(){
@@ -65,7 +66,7 @@ export function renderList(){
     rows += u.reorder
       ? `<div class="row gx edit" data-id="${i.id}" data-cat="${i.cat}">${body}<button class="handle" aria-label="${esc(i.name)} ${esc(i.colorName)} 순서 이동, 위아래 화살표로 이동">${IC.grip}</button></div>`
       : `<button class="row gx" data-act="detail" data-id="${i.id}">${body}
-      <div class="cnt"><b>${s.total}<small>회</small></b><span class="since">세탁 후 ${s.since}/${i.wash}</span>
+      <div class="cnt"><b>${s.total}<small>회</small></b><span class="since">${i.wash?`세탁 후 ${s.since}/${i.wash}`:`세탁 후 ${s.since}회`}</span>
         ${s.state==='due'?'<span class="tag tag-due">세탁 권장</span>':s.state==='soon'?'<span class="tag tag-soon">세탁 임박</span>':''}</div></button>`;
   }
   $('#list').innerHTML = list.length? rows : `<div class="empty">조건에 맞는 의류가 없습니다.</div>`;

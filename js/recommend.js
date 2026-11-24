@@ -14,7 +14,7 @@ export function rankOutfits(fixed={}){
   const T=todayISO(); const last=[...S.records].filter(r=>r.date<T).sort((a,b)=>b.date.localeCompare(a.date))[0]?.sel||{};
   const lastIds=new Set(Object.values(last));
   const opts=k=> k in fixed ? [byId(fixed[k])||null] : pool[k].length?pool[k]:[null];
-  const own=x=>{ if(!x) return 0; const s=st.get(x.id); return -(s.since/x.wash*1.2 + s.total*.04) - (lastIds.has(x.id)?.35:0); };
+  const own=x=>{ if(!x) return 0; const s=st.get(x.id); return -((x.wash? s.since/x.wash : 0)*1.2 + s.total*.04) - (lastIds.has(x.id)?.35:0); };
   const best=[];
   for(const o of opts('outer'))for(const t of opts('top'))for(const b of opts('bottom'))for(const s of opts('shoes')){
     let sc=own(o)+own(t)+own(b)+own(s);

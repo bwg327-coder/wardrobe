@@ -82,6 +82,7 @@ document.addEventListener('click',async e=>{
     case 'washed': { const id=d.id, prev=await store.washItem(id); renderAll(); sheetDetail(id);
       toast('세탁 완료 · 세탁 후 착장 0회부터 다시 집계합니다',{action:'실행 취소',onAction:async()=>{ await store.undoWash(id,prev); renderAll(); if(sheetOpen()) sheetDetail(id); }}); break; }
     case 'clear-photo': if(form.previewUrl) URL.revokeObjectURL(form.previewUrl); form.previewUrl=null; form.photoBlob=null; form.noAlpha=false; syncForm(); drawForm(); break;
+    case 'wash-none': syncForm(); if(form.wash){ form._lastWash=form.wash; form.wash=0; } else form.wash=form._lastWash||5; drawForm(); break;
     case 'sub-add': syncForm(); form.addSub = form.addSub? null : {name:'', t:form.t}; drawForm(); if(form.addSub) $('#f-subname')?.focus(); break;
     case 'sub-cancel': syncForm(); form.addSub=null; drawForm(); break;
     case 'sub-save': { syncForm(); const {name,t}=form.addSub; await store.addSub(form.cat,name,t); syncForm(); form.sub=name.trim(); form.t=t; form.addSub=null; drawForm(); toast(`세부 유형 ‘${name.trim()}’을(를) 추가했습니다`); break; }
@@ -90,7 +91,7 @@ document.addEventListener('click',async e=>{
       if(form.busy){ toast('사진을 처리하는 중입니다. 잠시 후 다시 눌러 주세요'); return; }
       if(!form.name){ $('#f-name').focus(); toast('제품명을 입력해 주세요'); return; }
       if(!form.colorName){ $('#f-cname').focus(); toast('컬러 이름을 입력해 주세요'); return; }
-      const {photoBlob,previewUrl,addSub,noAlpha,_photoUrl,busy,...data}=form;
+      const {photoBlob,previewUrl,addSub,noAlpha,_photoUrl,busy,_lastWash,...data}=form;
       const isNew=!form.id;
       await store.saveItem(data, photoBlob);
       closeSheet();
@@ -222,9 +223,9 @@ document.addEventListener('mousemove',e=>{ if(sw) swMove(e.clientX,e.clientY); }
 document.addEventListener('mouseup',swEnd);
 document.addEventListener('click',e=>{ if(swallowClick && e.target.closest(STRIPS)){ e.stopPropagation(); e.preventDefault(); } },true);
 document.addEventListener('click',e=>{
-  const b=e.target.closest('[data-scroll]'); if(!b) return;
-  const el=document.querySelector(`.strip[data-strip="${b.dataset.scroll}"]`); if(!el) return;
-  el.scrollBy({left:Number(b.dataset.d)*el.clientWidth*.8, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  const b=e.target.closest('[data-scroll],[data-scroll-shapes]'); if(!b) return;
+  const el=b.dataset.scrollShapes? document.querySelector('#f-shapes') : document.querySelector(`.strip[data-strip="${b.dataset.scroll}"]`); if(!el) return;
+  el.scrollBy({left:Number(b.dataset.d||b.dataset.scrollShapes)*el.clientWidth*.8, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
 });
 
 /* ---------- 저장 공간 ---------- */

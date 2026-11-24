@@ -36,7 +36,7 @@ export function normalizeItem(i){
   const it = {...i};
   if(!CATS.includes(it.cat)) it.cat='top';
   if(!shapeOk(it.cat,it.t)) it.t = SHAPES[it.cat][0][0];
-  it.wash = clampInt(it.wash,1,99,5); it.base=clampInt(it.base,0,9999,0); it.baseSince=clampInt(it.baseSince,0,9999,0);
+  it.wash = clampInt(it.wash,0,99,5); // 0 = 세탁 기준 없음 it.base=clampInt(it.base,0,9999,0); it.baseSince=clampInt(it.baseSince,0,9999,0);
   it.order = Number.isFinite(it.order)? it.order : 9999;
   it.name = String(it.name||'').slice(0,60); it.colorName=String(it.colorName||'').slice(0,30); it.sub=String(it.sub||'').slice(0,20);
   it.washedAt = Number.isFinite(it.washedAt)? it.washedAt : null;
@@ -97,7 +97,7 @@ function buildStats(){
     const total = it.base + recs.length;
     const since = it.baseSince + (it.washedAt ? recs.filter(r=>r.ts>it.washedAt).length : recs.length);
     const dates = recs.map(r=>r.date).sort().reverse();
-    const state = since>=it.wash ? 'due' : since>=it.wash-1 ? 'soon' : 'ok';
+    const state = !it.wash ? 'ok' : since>=it.wash ? 'due' : since>=it.wash-1 ? 'soon' : 'ok';
     m.set(it.id,{total, since, last:dates[0]||null, state, dates});
   }
   return m;

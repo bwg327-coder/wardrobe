@@ -16,10 +16,10 @@ export function sheetDetail(id,ask=false){
       <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div><div class="name">${esc(i.name)}</div>
       <div class="color"><i class="sw" style="background:${i.color}"></i>${esc(i.colorName)}</div>
       <div class="det-big"><div><b>${s.total}</b><span>누적 착장</span></div><div><b>${s.since}</b><span>세탁 후 착장</span></div></div>
-      <div class="bar" aria-hidden="true"><i style="width:${Math.min(100,s.since/i.wash*100)}%"></i></div>
-      <div class="f-hint">${s.state==='due'?'세탁 기준에 도달했습니다':s.state==='soon'?'다음 착용 후 세탁 권장':`세탁까지 ${i.wash-s.since}회 남음`}</div></div></div>
+      ${i.wash?`<div class="bar" aria-hidden="true"><i style="width:${Math.min(100,s.since/i.wash*100)}%"></i></div>`:''}
+      <div class="f-hint">${!i.wash?'세탁 기준 없음 · 알림을 표시하지 않습니다':s.state==='due'?'세탁 기준에 도달했습니다':s.state==='soon'?'다음 착용 후 세탁 권장':`세탁까지 ${i.wash-s.since}회 남음`}</div></div></div>
     <dl class="kv" style="margin:0">
-      <div><dt>세탁 기준</dt><dd>${i.wash}회 착용마다</dd></div>
+      <div><dt>세탁 기준</dt><dd>${i.wash?`${i.wash}회 착용마다`:'지정 안 함'}</dd></div>
       <div><dt>최근 착용</dt><dd>${s.last?fmtMDW(s.last):'기록 없음'}</dd></div>
       <div><dt>최근 세탁</dt><dd>${i.washedAt?fmtMD(iso(new Date(i.washedAt))):'기록 없음'}</dd></div>
       <div><dt>이번 달 착용일</dt><dd class="num">${month.length?month.map(d=>d+'일').join(', '):'-'}</dd></div>
@@ -44,8 +44,8 @@ export function sheetForm(id){
   drawForm(false);
 }
 export function closeForm(){ if(form?.previewUrl) URL.revokeObjectURL(form.previewUrl); form=null; }
-const stepper=(key,v,min,max,label)=>`<div class="stepper" role="group" aria-label="${label}"><button data-step="${key}" data-d="-1" aria-label="${label} 줄이기"${v<=min?' disabled':''}>−</button><output class="num">${v}</output><button data-step="${key}" data-d="1" aria-label="${label} 늘리기"${v>=max?' disabled':''}>+</button></div>`;
-export const STEP={wash:[1,99],base:[0,999],baseSince:[0,999]};
+const stepper=(key,v,min,max,label)=>`<div class="stepper" role="group" aria-label="${label}"><button data-step="${key}" data-d="-1" aria-label="${label} 줄이기"${v<=min?' disabled':''}>−</button><output class="num">${key==='wash'&&!v?'없음':v}</output><button data-step="${key}" data-d="1" aria-label="${label} 늘리기"${v>=max?' disabled':''}>+</button></div>`;
+export const STEP={wash:[0,99],base:[0,999],baseSince:[0,999]};
 function preview(f){
   if(f.photoBlob===null) return drawing(f);
   if(f.previewUrl) return thumb({...f,_photoUrl:f.previewUrl});
@@ -79,9 +79,10 @@ export function drawForm(keep=true){
       <div class="photo-opts"><label class="btn btn-line btn-sm" for="f-photo">${showPhoto?'사진 바꾸기':'사진 선택'}</label><input id="f-photo" type="file" accept="image/png,image/webp,image/jpeg,image/*" class="sr">
       ${showPhoto?`<button class="btn-text" style="height:32px;font-size:12.5px" data-act="clear-photo">사진 지우고 도식화 사용</button>`:''}
       <span>${showPhoto? (f.noAlpha?'배경이 있는 사진입니다. 배경을 제거한 PNG를 쓰면 코디 이미지에 자연스럽게 합성됩니다.':'실제 사진이 목록과 코디 이미지에 표시됩니다.') :'배경을 제거한 PNG를 권장합니다. 사진이 없으면 아래 형태와 컬러로 도식화를 그립니다.'}</span></div></div></div>
-    <div class="f"><span class="lbl">도식화 형태</span><div class="shapes">${SHAPES[f.cat].map(([t,l])=>`<button class="shape" data-f-shape="${t}" aria-pressed="${f.t===t}"><span class="ph">${drawing({...f,t})}</span><span class="lab">${l}</span></button>`).join('')}</div></div>
-    <div class="f"><span class="lbl">세탁 기준 횟수</span>${stepper('wash',f.wash,...STEP.wash,'세탁 기준 횟수')}
-      <div class="f-hint">${f.wash}회 착용하면 세탁 권장 알림을 표시합니다.</div></div>
+    <div class="f"><span class="lbl lbl-pager">도식화 형태<span class="pager"><button data-scroll-shapes="-1" aria-label="이전 형태">${IC.left}</button><button data-scroll-shapes="1" aria-label="다음 형태">${IC.right}</button></span></span><div class="shapes" id="f-shapes">${SHAPES[f.cat].map(([t,l])=>`<button class="shape" data-f-shape="${t}" aria-pressed="${f.t===t}"><span class="ph">${drawing({...f,t})}</span><span class="lab">${l}</span></button>`).join('')}</div></div>
+    <div class="f"><span class="lbl">세탁 기준 횟수</span><div class="wash-row">${stepper('wash',f.wash,...STEP.wash,'세탁 기준 횟수')}
+      <button class="chip" data-act="wash-none" aria-pressed="${!f.wash}">지정 안 함</button></div>
+      <div class="f-hint">${f.wash?`${f.wash}회 착용하면 세탁 권장 알림을 표시합니다.`:'세탁 알림 없이 착장 횟수만 기록합니다. 세탁 필요순에서는 맨 뒤에 놓입니다.'}</div></div>
     <details class="f more"${f.base||f.baseSince?' open':''}><summary>앱 사용 전 착장 횟수</summary>
       <div class="f-2">
         <div><span class="lbl">누적 착장</span>${stepper('base',f.base,...STEP.base,'누적 착장')}</div>
@@ -91,7 +92,9 @@ export function drawForm(keep=true){
     </details>
   </div>
   <div class="sheet-foot gx"><button class="btn btn-dark" data-act="save">${f.id?'수정 완료':'등록하기'}</button></div>`;
+  const xs=[...document.querySelectorAll('#sheet .shapes')].map(el=>el.scrollLeft);
   openSheet(html,{keepScroll:keep,closeCb:closeForm});
+  if(keep) document.querySelectorAll('#sheet .shapes').forEach((el,i)=>{ if(xs[i]) el.scrollLeft=xs[i]; });
 }
 
 /* ---------- 설정 ---------- */
