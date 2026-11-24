@@ -103,9 +103,10 @@ const hm=t=>{ const d=new Date(t); return `${d.getMonth()+1}월 ${d.getDate()}�
 export function syncBlock(o){
   if(!o.configured) return `<div class="set-row"><span><div class="t">준비 중</div><div class="d">구글 클라우드 연결 설정이 끝나면 사용할 수 있습니다</div></span></div>`;
   if(o.embedded) return `<div class="set-row"><span><div class="t">배포 주소에서 사용할 수 있습니다</div><div class="d">이 미리보기 화면에서는 구글 로그인이 막혀 있습니다</div></span></div>`;
-  if(!o.state) return `<button class="set-row" data-act="sync-connect"><span><div class="t">구글 계정 연결</div><div class="d">내 구글 드라이브의 앱 전용 폴더에 옷장 데이터를 저장해 PC·휴대폰에서 함께 씁니다</div></span>${IC.chev}</button>`;
+  const err=o.error?`<div class="confirm-del sync-err"><span><b>${esc(o.error.msg)}</b>${o.error.detail?`<br><span class="err-detail">${esc(o.error.detail)}</span>`:''}</span></div>`:'';
+  if(!o.state) return err+`<button class="set-row" data-act="sync-connect"><span><div class="t">구글 계정 연결</div><div class="d">내 구글 드라이브의 앱 전용 폴더에 옷장 데이터를 저장해 PC·휴대폰에서 함께 씁니다</div></span>${IC.chev}</button>`;
   const s=o.state;
-  return `<div class="set-row"><span><div class="t">${esc(s.email||'연결됨')}</div><div class="d">${s.lastSyncAt?`마지막 동기화 ${hm(s.lastSyncAt)}`:'아직 동기화하지 않음'}${o.pending?' · 이 기기에 올리지 않은 변경 있음':''}</div></span></div>
+  return err+`<div class="set-row"><span><div class="t">${esc(s.email||'연결됨')}</div><div class="d">${s.lastSyncAt?`마지막 동기화 ${hm(s.lastSyncAt)}`:'아직 동기화하지 않음'}${o.pending?' · 이 기기에 올리지 않은 변경 있음':''}</div></span></div>
     ${o.conflict?`<div class="confirm-del"><span><b>양쪽 모두 바뀌었습니다.</b> 어느 쪽을 남길지 골라 주세요. 고르지 않은 쪽 내용은 사라집니다.<br>드라이브: ${esc(o.conflict.device||'다른 기기')} · ${hm(Date.parse(o.conflict.at)||Date.now())} 저장<br>이 기기: ${o.localAt?hm(o.localAt):'-'} 수정 · 의류 ${S.items.length}벌 · 기록 ${S.records.length}일</span>
       <div class="r r-col"><button class="btn btn-dark btn-sm" data-act="sync-down">드라이브 내용 불러오기</button><button class="btn btn-line btn-sm" data-act="sync-up">이 기기 내용으로 덮어쓰기</button></div></div>`:''}
     <button class="set-row" data-act="sync-now"${o.busy?' disabled':''}><span><div class="t">${o.busy?'동기화 중…':'지금 동기화'}</div><div class="d">바뀐 쪽을 확인해 올리거나 불러옵니다</div></span>${IC.chev}</button>

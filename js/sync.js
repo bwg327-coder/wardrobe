@@ -6,7 +6,10 @@ import { S, getMeta, setMeta, replaceData } from './store.js';
 import { makeBackup, parseBackupText } from './backup.js';
 import { GOOGLE_CLIENT_ID } from './config.js';
 
-const SCOPE='https://www.googleapis.com/auth/drive.appdata openid email';
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
+const SCOPE=DRIVE_SCOPE+' openid email';
+const SCOPE_MSG='드라이브 접근 권한이 허용되지 않았습니다. 다시 연결할 때 구글 화면에서 “Google Drive 앱 데이터” 항목을 꼭 체크해 주세요';
+let needConsent=false, lastScope=''; // 권한이 빠졌으면 다음 로그인 때 동의 화면을 다시 띄운다
 const FILE='wardrobe-sync.json';
 const API='https://www.googleapis.com/drive/v3', UP='https://www.googleapis.com/upload/drive/v3';
 const TK='wardrobe.gtoken';
@@ -23,6 +26,9 @@ function keepToken(token,sec){ try{ localStorage.setItem(TK,JSON.stringify({toke
 function dropToken(){ try{ localStorage.removeItem(TK); }catch(_){} }
 export const hasToken = ()=>!!savedToken();
 
+function scopeLine(){ let sc=lastScope; if(!sc){ try{ sc=localStorage.getItem('wardrobe.gscope')||''; }catch(_){} }
+  const short=sc.split(' ').filter(Boolean).map(x=>x.replace('https://www.googleapis.com/auth/','')).join(', ');
+  return `받은 권한: ${short||'(알 수 없음)'}`; }
 let gisP=null;
 export function preload(){ if(configured() && !embedded()) loadGis().catch(()=>{}); }
 function loadGis(){
@@ -37,9 +43,12 @@ export async function signIn({hint}={}){
   await loadGis();
   return new Promise((res,rej)=>{
     const c=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID, scope:SCOPE, hint,
-      callback:r=>{ if(r.error) return rej(new Error('구글 연결이 취소되었습니다')); keepToken(r.access_token,Number(r.expires_in)||3600); res(r.access_token); },
+      callback:r=>{ if(r.error) return rej(new Error('구글 연결이 취소되었습니다'));
+        lastScope=r.scope||''; try{ localStorage.setItem('wardrobe.gscope',lastScope); }catch(_){}
+        if(!google.accounts.oauth2.hasGrantedAllScopes(r,DRIVE_SCOPE)){ needConsent=true; return rej(Object.assign(new Error(SCOPE_MSG),{scope:true,detail:scopeLine()})); }
+        needConsent=false; keepToken(r.access_token,Number(r.expires_in)||3600); res(r.access_token); },
       error_callback:e=>rej(new Error(e?.type==='popup_closed'?'구글 연결 창이 닫혔습니다':'구글 연결 창을 열 수 없습니다. 팝업 차단을 확인해 주세요')) });
-    c.requestAccessToken({prompt: hint? '' : 'consent'});
+    c.requestAccessToken({prompt: hint&&!needConsent? '' : 'consent'});
   });
 }
 async function token(interactive){
@@ -50,7 +59,14 @@ async function token(interactive){
 async function gfetch(url,opt={},tk){
   const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+tk}});
   if(r.status===401){ dropToken(); throw Object.assign(new Error('구글 연결이 만료되었습니다. 다시 동기화를 눌러 주세요'),{auth:true}); }
-  if(!r.ok) throw new Error(`드라이브 오류 (${r.status})`);
+  if(!r.ok){
+    const j=await r.json().catch(()=>null), e=j?.error||{};
+    const reason=e.errors?.[0]?.reason || e.details?.find(d=>d.reason)?.reason || e.status || '';
+    const detail=`구글 응답: ${r.status}${reason?' '+reason:''}${e.message?' · '+e.message:''}\n${scopeLine()}`;
+    if(/insufficient|SCOPE_INSUFFICIENT/i.test(reason)){ dropToken(); needConsent=true; throw Object.assign(new Error(SCOPE_MSG),{detail,scope:true}); }
+    if(/accessNotConfigured|SERVICE_DISABLED/i.test(reason)) throw Object.assign(new Error('구글 클라우드 프로젝트에서 Google Drive API가 꺼져 있습니다. 방금 켰다면 5분쯤 뒤 다시 시도해 주세요'),{detail});
+    throw Object.assign(new Error(`드라이브 오류 (${r.status}${reason?' '+reason:''})`),{detail});
+  }
   return r;
 }
 

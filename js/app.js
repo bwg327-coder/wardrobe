@@ -33,8 +33,8 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 /* ---------- 구글 드라이브 동기화 ---------- */
-let SY={state:null,busy:false,conflict:null};
-const syncOpt=()=>({configured:gsync.configured(), embedded:gsync.embedded(), state:SY.state, pending:gsync.pending(), busy:SY.busy, conflict:SY.conflict, localAt:S.localUpdatedAt});
+let SY={state:null,busy:false,conflict:null,error:null};
+const syncOpt=()=>({configured:gsync.configured(), embedded:gsync.embedded(), state:SY.state, pending:gsync.pending(), busy:SY.busy, conflict:SY.conflict, error:SY.error, localAt:S.localUpdatedAt});
 function openSettings(extra={}){ gsync.preload(); sheetSettings({canInstall:!!installEvt, sync:syncOpt(), ...extra}); }
 function refreshSync(){
   const el=$('#sync-sec'); if(el && sheetOpen()) el.innerHTML='<h3>구글 드라이브 동기화</h3>'+syncBlock(syncOpt());
@@ -45,14 +45,14 @@ async function doSync({interactive=false, force}={}){
   SY.busy=true; refreshSync();
   try{
     const r=await gsync.sync({interactive, force});
-    SY.state=await gsync.syncState();
+    SY.state=await gsync.syncState(); SY.error=null;
     if(r.action==='conflict'){ SY.conflict=r.remote; if(interactive) toast('양쪽 모두 바뀌었습니다 · 남길 쪽을 골라 주세요'); else toast('동기화 확인이 필요합니다',{action:'열기',onAction:()=>openSettings()}); }
     else { SY.conflict=null; }
     if(r.action==='down'){ resetSel(); U.month=today().slice(0,7); U.day=today(); renderAll(); toast(`드라이브에서 불러왔습니다 · 의류 ${r.counts.count}벌 · 기록 ${r.counts.records}일`); }
     if(r.action==='up' && interactive) toast('드라이브에 저장했습니다');
     if(r.action==='none' && interactive) toast('이미 최신 상태입니다');
     if(r.needLogin && interactive) toast('구글 연결이 필요합니다');
-  }catch(e){ if(interactive || !e.auth) fail(e); }
+  }catch(e){ SY.state=await gsync.syncState(); if(!e.auth) SY.error={msg:e?.message||'동기화하지 못했습니다', detail:e?.detail||''}; if(interactive || !e.auth) fail(e); }
   finally{ SY.busy=false; refreshSync(); }
 }
 let syncT=0;
@@ -96,7 +96,7 @@ document.addEventListener('click',async e=>{
     case 'sync-up': await doSync({interactive:true,force:'up'}); break;
     case 'sync-down': await doSync({interactive:true,force:'down'}); break;
     case 'sync-auto': await gsync.setAuto(SY.state?.auto===false); SY.state=await gsync.syncState(); refreshSync(); break;
-    case 'sync-off': await gsync.disconnect(); SY={state:null,busy:false,conflict:null}; refreshSync(); toast('구글 연결을 해제했습니다'); break;
+    case 'sync-off': await gsync.disconnect(); SY={state:null,busy:false,conflict:null,error:null}; refreshSync(); toast('구글 연결을 해제했습니다'); break;
     case 'backup-copy': {
       // 클립보드 쓰기는 클릭 직후(await 전)에 호출해야 허용되는 환경이 있어 미리 만든 내용을 쓴다
       const ready=bkCache;
