@@ -1,0 +1,4 @@
+Pretendard (https://github.com/orioncactus/pretendard) — Copyright (c) 2021, Kil Hyung-jin. SIL Open Font License 1.1.
+Archivo (https://github.com/Omnibus-Type/Archivo) — Copyright 2020 The Archivo Project Authors. SIL Open Font License 1.1.
+Subset files in this folder are modified versions (character subsets) distributed under the same license.
+Full license text: https://openfontlicense.org/open-font-license-official-text/
