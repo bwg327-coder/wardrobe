@@ -317,3 +317,6 @@ main{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolli
 .pick-h .s{flex:1}
 .strip{position:relative}
 .cd-bar{min-height:70px}
+.confirm.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.6fr);gap:8px}
+.confirm .btn-line{background:#fff}
+.stage + .pick{margin-top:18px}

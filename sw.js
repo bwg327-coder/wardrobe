@@ -1,5 +1,5 @@
 /* 서비스 워커 — 앱 셸을 캐시해 오프라인에서도 동작. 배포 시 VERSION을 올리면 캐시가 교체된다. */
-const VERSION='wardrobe-v1.3.0';
+const VERSION='wardrobe-v1.3.1';
 const SHELL=['./','./index.html','./manifest.webmanifest','./css/app.css',
   './js/app.js','./js/const.js','./js/util.js','./js/db.js','./js/store.js','./js/seed.js','./js/garments.js','./js/recommend.js','./js/image.js','./js/backup.js',
   './js/ui/common.js','./js/ui/wardrobe.js','./js/ui/coord.js','./js/ui/log.js','./js/ui/sheets.js',
