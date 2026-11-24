@@ -10,9 +10,10 @@ export async function makeBackup(){
   for(const it of S.items) if(it.hasPhoto){ const b=await photoBlob(it.id); if(b) photos[it.id]=await blobToDataURL(b); }
   const data={ app:'WARDROBE', format:'wardrobe-backup', dataVersion:DATA_VERSION, appVersion:APP_VERSION, exportedAt:new Date().toISOString(),
     items:S.items, records:S.records, customSubs:S.customSubs, prefs:S.prefs, photos };
-  const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  const text=JSON.stringify(data);
+  const blob=new Blob([text],{type:'application/json'});
   const name=`wardrobe-backup-${today()}.json`;
-  return {blob,name,count:S.items.length,photos:Object.keys(photos).length,records:S.records.length};
+  return {text,blob,name,count:S.items.length,photos:Object.keys(photos).length,records:S.records.length};
 }
 
 /* 파일 저장: 웹은 다운로드, (향후 Capacitor는 Filesystem/Share 플러그인으로 교체할 지점) */
@@ -26,7 +27,13 @@ export async function saveFile({blob,name}){
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 export async function parseBackup(file){
   if(file.size>300*1024*1024) throw new Error('파일이 너무 큽니다');
-  let d; try{ d=JSON.parse(await file.text()); }catch(_){ throw new Error('JSON 파일을 읽을 수 없습니다'); }
+  return parseBackupText(await file.text());
+}
+/* 붙여넣은 백업 내용(텍스트)으로 복원 — 파일 저장이 막힌 환경용 */
+export async function parseBackupText(text){
+  text=String(text||'').trim();
+  if(!text) throw new Error('붙여넣은 내용이 없습니다');
+  let d; try{ d=JSON.parse(text); }catch(_){ throw new Error('백업 내용이 잘렸거나 형식이 맞지 않습니다. 전체를 다시 복사해 주세요'); }
   if(!d || d.format!=='wardrobe-backup' || !Array.isArray(d.items) || !Array.isArray(d.records)) throw new Error('WARDROBE 백업 파일이 아닙니다');
   if((d.dataVersion||1)>DATA_VERSION) throw new Error('더 새로운 버전의 앱에서 만든 백업입니다. 앱을 업데이트해 주세요');
   const ids=new Set();

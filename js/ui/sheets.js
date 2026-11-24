@@ -105,8 +105,12 @@ export function sheetSettings(opt={}){
   <div class="sheet-b gx">
     <div class="set-sec"><h3>데이터</h3>
       <button class="set-row" data-act="backup"><span><div class="t">백업 파일 만들기</div><div class="d">의류 · 사진 · 착장 기록 · 설정을 JSON 파일로 저장</div></span>${IC.chev}</button>
+      <button class="set-row" data-act="backup-copy"><span><div class="t">백업 내용 복사</div><div class="d">파일 저장이 안 되는 화면용 · 복사한 내용을 ‘붙여넣어 복원’에 넣습니다</div></span>${IC.chev}</button>
+      ${opt.copyText!=null?`<div class="confirm-del"><span>자동 복사가 막혀 있습니다. 아래 칸을 길게 눌러 <b>전체 선택 → 복사</b>하세요.</span><textarea id="copy-box" class="paste-box" readonly>${esc(opt.copyText)}</textarea><div class="r"><button class="btn btn-line btn-sm" data-act="settings">닫기</button></div></div>`:''}
       <label class="set-row" for="restore" style="cursor:pointer"><span><div class="t">백업 파일로 복원</div><div class="d">현재 데이터를 백업 파일 내용으로 바꿉니다</div></span>${IC.chev}</label><input id="restore" type="file" accept="application/json,.json" class="sr">
-      ${opt.restore?`<div class="confirm-del"><span>백업 파일 확인 · 의류 ${opt.restore.items.length}벌 · 사진 ${opt.restore.photos.length}장 · 착장 기록 ${opt.restore.records.length}일${opt.restore.exportedAt?` · ${esc(new Date(opt.restore.exportedAt).toLocaleString('ko-KR'))} 백업`:''}<br>복원하면 지금 기기에 있는 데이터는 이 내용으로 바뀝니다.</span><div class="r"><button class="btn btn-line btn-sm" data-act="settings">취소</button><button class="btn btn-dark btn-sm" data-act="restore-yes">복원</button></div></div>`:''}
+      <button class="set-row" data-act="paste-open"><span><div class="t">붙여넣어 복원</div><div class="d">‘백업 내용 복사’로 복사한 내용을 붙여넣어 불러옵니다</div></span>${IC.chev}</button>
+      ${opt.paste?`<div class="confirm-del"><span>복사한 백업 내용을 아래 칸에 붙여넣으세요.</span><textarea id="paste-box" class="paste-box" placeholder="여기에 길게 눌러 붙여넣기"></textarea><div class="r"><button class="btn btn-line btn-sm" data-act="settings">취소</button><button class="btn btn-dark btn-sm" data-act="paste-load">불러오기</button></div></div>`:''}
+      ${opt.restore?`<div class="confirm-del"><span>백업 확인 · 의류 ${opt.restore.items.length}벌 · 사진 ${opt.restore.photos.length}장 · 착장 기록 ${opt.restore.records.length}일${opt.restore.exportedAt?` · ${esc(new Date(opt.restore.exportedAt).toLocaleString('ko-KR'))} 백업`:''}<br>복원하면 지금 기기에 있는 데이터는 이 내용으로 바뀝니다.</span><div class="r"><button class="btn btn-line btn-sm" data-act="settings">취소</button><button class="btn btn-dark btn-sm" data-act="restore-yes">복원</button></div></div>`:''}
       <button class="set-row" data-act="load-seed"><span><div class="t">기본 옷 목록 불러오기</div><div class="d">처음 제공된 34벌을 옷장에 추가합니다</div></span>${IC.chev}</button>
       <button class="set-row danger" data-act="ask-reset"><span><div class="t">데이터 초기화</div><div class="d">이 기기에 저장된 모든 의류와 기록을 삭제합니다</div></span>${IC.chev}</button>
       ${opt.reset?`<div class="confirm-del"><span>초기화하면 되돌릴 수 없습니다. 먼저 백업 파일을 만들어 두는 것을 권장합니다.</span><div class="r"><button class="btn btn-line btn-sm" data-act="settings">취소</button><button class="btn btn-dark btn-sm" data-act="reset">초기화</button></div></div>`:''}
@@ -118,5 +122,5 @@ export function sheetSettings(opt={}){
     <div class="set-sec" id="install-sec" ${opt.canInstall?'':'hidden'}><h3>앱</h3>
       <button class="set-row" data-act="install"><span><div class="t">홈 화면에 설치</div><div class="d">앱처럼 전체 화면으로 실행하고 오프라인에서도 사용</div></span>${IC.chev}</button></div>
     <div class="ver" id="storage-info">저장 위치 · 이 기기(브라우저 로컬 저장소)<br>WARDROBE ${APP_VERSION} · 인터넷 연결 없이 동작하며 데이터는 외부로 전송되지 않습니다.</div>
-  </div>`,{keepScroll:!!(opt.restore||opt.reset)});
+  </div>`,{keepScroll:!!(opt.restore||opt.reset||opt.paste||opt.copyText!=null)});
 }

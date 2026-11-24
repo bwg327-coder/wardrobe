@@ -4,7 +4,7 @@ import { S, byId, recordOn, stats } from './store.js';
 import { CATS, PALETTE } from './const.js';
 import { recommend } from './recommend.js';
 import { prepPhoto } from './image.js';
-import { makeBackup, saveFile, parseBackup, applyBackup } from './backup.js';
+import { makeBackup, saveFile, parseBackup, parseBackupText, applyBackup } from './backup.js';
 import { $, today, fmtMD, pad, isHex } from './util.js';
 import { toast, closeSheet, sheetOpen } from './ui/common.js';
 import { renderWardrobe, renderList } from './ui/wardrobe.js';
@@ -31,6 +31,8 @@ document.addEventListener('visibilitychange',()=>{
   lastDay=t; store.touch(); renderAll();
 });
 
+let bkCache=null;
+function prepBackup(){ bkCache=null; makeBackup().then(b=>{ bkCache=b; }).catch(()=>{}); }
 function resetSel(){ U.recIdx=0; U.sel={}; U.lock={}; }
 /* 사용자가 고른 분류(lock)는 두고, 나머지 분류를 그 옷에 맞춰 추천으로 채운다 */
 function fillRest(idx=0){
@@ -60,11 +62,22 @@ document.addEventListener('click',async e=>{
   }
   switch(act){
     case 'close': closeSheet(); break;
-    case 'settings': pendingRestore=null; sheetSettings({canInstall:!!installEvt}); storageInfo(); break;
+    case 'settings': pendingRestore=null; sheetSettings({canInstall:!!installEvt}); storageInfo(); prepBackup(); break;
+    case 'backup-copy': {
+      // 클립보드 쓰기는 클릭 직후(await 전)에 호출해야 허용되는 환경이 있어 미리 만든 내용을 쓴다
+      const ready=bkCache;
+      const run = ready? Promise.resolve(ready) : makeBackup();
+      const copy = ready && navigator.clipboard?.writeText ? navigator.clipboard.writeText(ready.text) : Promise.reject();
+      const bk=await run;
+      try{ await copy; toast(`백업 내용을 복사했습니다 · 의류 ${bk.count}벌 · 사진 ${bk.photos}장 · 기록 ${bk.records}일`); }
+      catch(_){ sheetSettings({copyText:bk.text,canInstall:!!installEvt}); const t=$('#copy-box'); t?.focus(); t?.select(); }
+      break; }
+    case 'paste-open': pendingRestore=null; sheetSettings({paste:true,canInstall:!!installEvt}); $('#paste-box')?.focus(); break;
+    case 'paste-load': { const v=$('#paste-box')?.value; pendingRestore=await parseBackupText(v); sheetSettings({restore:pendingRestore,canInstall:!!installEvt}); break; }
     case 'ask-reset': sheetSettings({reset:true,canInstall:!!installEvt}); break;
     case 'reset': await store.resetAll(); closeSheet(); U.recIdx=0; renderAll(); toast('모든 데이터가 초기화되었습니다'); break;
     case 'load-seed': { const n=await store.loadSeed(); resetSel(); if(sheetOpen()) closeSheet(); U.cat='all'; renderAll(); toast(`기본 옷 ${n}벌을 불러왔습니다`); break; }
-    case 'backup': { toast('백업 파일을 만드는 중…'); const bk=await makeBackup(); await saveFile(bk); toast(`백업 완료 · 의류 ${bk.count}벌 · 사진 ${bk.photos}장 · 기록 ${bk.records}일`); break; }
+    case 'backup': { toast('백업 파일을 만드는 중…'); const bk=await makeBackup(); await saveFile(bk); toast(window.self!==window.top?'파일 저장이 막힌 화면이면 ‘백업 내용 복사’를 이용하세요':`백업 완료 · 의류 ${bk.count}벌 · 사진 ${bk.photos}장 · 기록 ${bk.records}일`); break; }
     case 'restore-yes': { if(!pendingRestore) break; await applyBackup(pendingRestore); pendingRestore=null; closeSheet(); resetSel(); U.cat='all'; U.month=today().slice(0,7); U.day=today(); renderAll(); toast('백업 파일로 복원했습니다'); break; }
     case 'install': if(installEvt){ installEvt.prompt(); await installEvt.userChoice; installEvt=null; $('#install-sec')?.setAttribute('hidden',''); } break;
     case 'sub-del': await store.removeSub(d.cat,d.name); sheetSettings({canInstall:!!installEvt}); toast('세부 유형을 삭제했습니다'); break;
