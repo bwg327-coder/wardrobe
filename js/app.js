@@ -1,7 +1,7 @@
 /* WARDROBE — 앱 진입점: 부팅 · 이벤트 위임 · 순서 편집 드래그 · PWA */
 import * as store from './store.js';
 import { S, byId, recordOn, stats } from './store.js';
-import { CATS, SLOTS, PALETTE, isCardigan } from './const.js';
+import { CATS, SLOTS, PALETTE, isCardigan, canLayer } from './const.js';
 import { recommend } from './recommend.js';
 import { prepPhoto } from './image.js';
 import { makeBackup, saveFile, parseBackup, parseBackupText, applyBackup } from './backup.js';
@@ -83,7 +83,10 @@ document.addEventListener('click',async e=>{
     let k=d.pick;
     if(k==='outer' && !d.id){ delete U.sel.outer; delete U.sel.mid; U.lock.outer=null; U.lock.mid=null; }
     else if(k==='outer' && isCardigan(byId(d.id))){ // 가디건: 패딩·코트와 함께 고를 수 있고, 다시 누르면 해제
-      if(U.sel.mid===d.id){ delete U.sel.mid; U.lock.mid=null; } else { U.sel.mid=d.id; U.lock.mid=d.id; }
+      if(U.sel.mid===d.id){ delete U.sel.mid; U.lock.mid=null; }
+      else { U.sel.mid=d.id; U.lock.mid=d.id; if(U.sel.outer && !canLayer(byId(U.sel.outer))){ delete U.sel.outer; U.lock.outer=null; } }
+    } else if(k==='outer'){ // 패딩·코트가 아니면 가디건과 함께 입지 않는다
+      U.sel.outer=d.id; U.lock.outer=d.id; if(!canLayer(byId(d.id))){ delete U.sel.mid; U.lock.mid=null; }
     } else { if(d.id) U.sel[k]=d.id; else delete U.sel[k]; U.lock[k]=d.id||null; }
     U.recIdx=0; fillRest(0); keepY(renderCoord); return; }
   if(d.day){ U.day=d.day; U.delAsk=false; renderLog(); return; }

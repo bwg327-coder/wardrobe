@@ -2,7 +2,7 @@
    점수 = 세탁 후 착장 비율·누적 착장이 적을수록 + 상·하의 명도 대비 + 아우터/상의 구분 + 직전 코디와 중복 감점.
    세탁 권장(due) 의류는 후보에서 제외. 버튼을 다시 누르면 상위 조합을 차례로 보여준다. */
 import { S, stats, byId } from './store.js';
-import { CATS, SLOTS, isCardigan } from './const.js';
+import { CATS, SLOTS, isCardigan, canLayer } from './const.js';
 import { lum } from './garments.js';
 import { today as todayISO } from './util.js';
 
@@ -20,7 +20,7 @@ export function rankOutfits(fixed={}){
   let layers;
   if(fo&&fm) layers=[[O,M]];
   else if(fo) layers=[[O,null]];
-  else if(fm) layers=[...coats.map(o=>[o,M]),[null,M]];
+  else if(fm) layers=[...coats.filter(canLayer).map(o=>[o,M]),[null,M]];
   else layers=[...coats.map(o=>[o,null]),...cards.map(c=>[null,c])];
   if(!layers.length) layers=[[null,null]];
   const own=x=>{ if(!x) return 0; const s=st.get(x.id); return -((x.wash? s.since/x.wash : 0)*1.2 + s.total*.04) - (lastIds.has(x.id)?.35:0); };

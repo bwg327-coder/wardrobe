@@ -104,17 +104,17 @@ function tCoat(c,flat){
   const lapel=()=>piece('M124,71 C128,84 133,100 138,122 L130,104 C125,96 119,88 115,80 Z',c,'',seam('M118,81 C123,88 128,96 132,104',LC,.4));
   return {back, front:sleeve()+MIR(sleeve())+panel()+MIR(panel())+lapel()+MIR(lapel())};
 }
+/* 더블 코트 · 맥코트: 단추를 푼 열린 앞판 — 안에 입은 가디건·상의가 가운데로 보인다 */
+const openBack=(c,flat,len)=>piece(`M100,84 Q150,64 200,84 C205,150 208,230 212,${len} L88,${len} C92,230 95,150 100,84 Z`,innerC(c,flat),'')
+  + piece('M120,74 Q150,60 180,74 L178,82 Q150,72 122,82 Z',shade(c,-.12),'');
 function tDouble(c,flat){
-  const back = `<path d="M124,72 Q150,64 176,72 L150,150 Z" fill="${innerC(c,flat)}" stroke="${edgeC(c)}" stroke-width="1" ${NS}/>`
-    + piece('M120,74 Q150,60 180,74 L178,82 Q150,72 122,82 Z',shade(c,-.12),'');
+  const back=openBack(c,flat,320);
   const sleeve=coatSleeve(c,flat);
-  let btn='';for(const y of [176,206,236])btn+=dot(134,y,c,2.6)+dot(166,y,c,2.6);
-  const body=piece('M124,72 L150,150 L176,72 C186,74 194,78 200,84 C205,150 208,230 212,320 L88,320 C92,230 95,150 100,84 C106,78 114,74 124,72 Z',c,'',
-      seam('M166,146 L168,320',LC,.9)+seam('M89,312 H211',LC,.5)+btn
-      +seam('M100,250 H128 V260 H100.5 Z',LC)+seam('M172,250 H200 V260 H172 Z',LC)+seam('M110,154 L130,150',LC,.8)
-      +seam('M124,72 Q114,96 99,118',LC,.5)+seam('M176,72 Q186,96 201,118',LC,.5));
-  const lapel=()=>piece('M124,72 L150,150 L137,136 L108,95 L118,95 L116,82 Z',c,'',seam('M116,82 L118,95',LC,.6));
-  return {back, front:sleeve()+MIR(sleeve())+body+lapel()+MIR(lapel())};
+  let btn=''; for(const y of [176,206,236]) btn+=dot(112,y,c,2.6)+dot(126,y,c,2.6);
+  const panel=()=>piece('M124,72 L135,140 C133,200 131,260 129,320 L88,320 C92,230 95,150 100,84 C106,78 114,74 124,72 Z',c,'',
+      seam('M89,312 H129',LC,.5)+btn+seam('M100,250 H120 V260 H100.5 Z',LC)+seam('M124,72 Q114,96 99,118',LC,.5)+seam('M110,154 L126,151',LC,.8));
+  const lapel=()=>piece('M124,72 L135,140 L127,132 L106,95 L117,95 L116,82 Z',c,'',seam('M116,82 L117,95',LC,.6));
+  return {back, front:sleeve()+MIR(sleeve())+panel()+MIR(panel())+lapel()+MIR(lapel())};
 }
 const blousonSleeve=(c,flat,cuff='rib')=>()=>rot(piece('M100,84 C86,92 78,118 76,160 L72,226 L95,228 L97,172 C98,140 99,112 100,100 Z',c,'',
   cuff==='rib'? rib(60,104,212,230,c) : seam('M73,212 L96,214',STITCH,.9,'1.6 1.1')+seam('M73,215 L96,217',STITCH,.9,'1.6 1.1')+dot(90,221,'#9a8a6a',1.6)),16,100,88,flat);
@@ -165,17 +165,15 @@ function tPuffer(c,flat){
   return {back, front:sleeve()+MIR(sleeve())+panel()+MIR(panel())+col()+MIR(col())+pull};
 }
 function tMac(c,flat){
-  /* 맥코트: 싱글 브레스트 · 노치 라펠 · 무릎 길이 · 3버튼 · 사선 웰트 포켓 · 뒤 트임 없는 깔끔한 실루엣 */
-  const back = `<path d="M126,72 Q150,64 174,72 L150,138 Z" fill="${innerC(c,flat)}" stroke="${edgeC(c)}" stroke-width="1" ${NS}/>`
-    + piece('M121,74 Q150,60 179,74 L177,82 Q150,72 123,82 Z',shade(c,-.12),'');
+  /* 맥코트: 싱글 브레스트 · 노치 라펠 · 무릎 길이 · 3버튼(풀림) · 사선 웰트 포켓 */
+  const back=openBack(c,flat,318);
   const sleeve=coatSleeve(c,flat);
-  let btn=''; for(const y of [160,196,232]) btn+=dot(150,y,c,2.3);
-  const body=piece('M126,72 L150,138 L174,72 C186,74 194,78 200,84 C204,150 207,230 210,318 L90,318 C93,230 96,150 100,84 C106,78 114,74 126,72 Z',c,'',
-      seam('M155,138 L157,318',LC,.9)+seam('M91,309 H209',LC,.5)+btn
-      +seam('M108,232 L119,262',LC,.9)+seam('M110,231 L121,261',LC,.4)+seam('M192,232 L181,262',LC,.9)+seam('M190,231 L179,261',LC,.4)
-      +seam('M126,72 Q114,96 99,118',LC,.5)+seam('M174,72 Q186,96 201,118',LC,.5));
-  const lapel=()=>piece('M126,72 L150,138 L140,128 L112,96 L121,92 L117,82 Z',c,'',seam('M117,82 L121,92',LC,.7)+seam('M121,92 L112,96',LC,.4));
-  return {back, front:sleeve()+MIR(sleeve())+body+lapel()+MIR(lapel())};
+  let btn=''; for(const y of [160,196,232]) btn+=dot(130,y,c,2.3);
+  let holes=''; for(const y of [160,196,232]) holes+=seam(`M166,${y} H172`,LC,.8);
+  const panel=(x)=>piece('M126,72 L136,138 C135,200 134,260 133,318 L90,318 C93,230 96,150 100,84 C106,78 114,74 126,72 Z',c,'',
+      seam('M91,309 H133',LC,.5)+seam('M108,232 L119,262',LC,.9)+seam('M110,231 L121,261',LC,.4)+seam('M126,72 Q114,96 99,118',LC,.5)+x);
+  const lapel=()=>piece('M126,72 L136,138 L128,130 L111,96 L120,92 L117,82 Z',c,'',seam('M117,82 L120,92',LC,.7)+seam('M120,92 L111,96',LC,.4));
+  return {back, front:sleeve()+MIR(sleeve())+panel(btn)+MIR(panel(''))+holes+lapel()+MIR(lapel())};
 }
 function tCardigan(c,flat){
   const sleeve=longSleeve(c,flat,234,'rib');

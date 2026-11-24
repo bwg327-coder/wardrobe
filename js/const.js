@@ -1,5 +1,5 @@
 /* 공통 상수 */
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '1.9.1';
 export const DATA_VERSION = 1;
 export const CAT = {outer:'아우터', top:'상의', bottom:'하의', shoes:'신발'};
 export const CATS = ['outer','top','bottom','shoes'];
@@ -7,6 +7,8 @@ export const CATS = ['outer','top','bottom','shoes'];
 export const SLOTS = ['outer','mid','top','bottom','shoes'];
 export const SLOT_NAME = {...CAT, mid:'아우터'};
 export const isCardigan = i=>!!i && i.cat==='outer' && (i.t==='cardigan' || i.sub==='가디건');
+/* 가디건과 함께 입을 수 있는 아우터: 패딩 · 코트 */
+export const canLayer = i=>!!i && i.cat==='outer' && !isCardigan(i) && (['패딩','코트'].includes(i.sub) || ['puffer','balmacaan','double','mac'].includes(i.t));
 
 /* 기본 세부 유형 → 기본 도식화 형태 */
 export const BASE_SUBS = {

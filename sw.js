@@ -1,6 +1,6 @@
 /* 서비스 워커 — 네트워크 우선: 온라인이면 항상 최신 파일, 오프라인이면 캐시로 동작.
    새 버전 배포 시 VERSION을 올리면 이전 캐시를 지운다. */
-const VERSION='wardrobe-v1.9.0';
+const VERSION='wardrobe-v1.9.1';
 const SHELL=['./','./index.html','./manifest.webmanifest','./css/app.css',
   './js/app.js','./js/const.js','./js/util.js','./js/db.js','./js/store.js','./js/seed.js','./js/garments.js','./js/recommend.js','./js/image.js','./js/backup.js','./js/sync.js','./js/config.js',
   './js/ui/common.js','./js/ui/wardrobe.js','./js/ui/coord.js','./js/ui/log.js','./js/ui/sheets.js',
