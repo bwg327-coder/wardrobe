@@ -10,7 +10,8 @@ import { toast, closeSheet, sheetOpen } from './ui/common.js';
 import { renderWardrobe, renderList } from './ui/wardrobe.js';
 import { renderCoord } from './ui/coord.js';
 import { renderLog } from './ui/log.js';
-import { sheetDetail, sheetForm, drawForm, sheetSettings, form, STEP } from './ui/sheets.js';
+import { sheetDetail, sheetForm, drawForm, sheetSettings, syncBlock, form, STEP } from './ui/sheets.js';
+import * as gsync from './sync.js';
 
 const U=S.ui;
 let installEvt=null, pendingRestore=null, lastDay=today();
@@ -30,6 +31,33 @@ document.addEventListener('visibilitychange',()=>{
   if(U.day===lastDay) U.day=t; if(U.month===lastDay.slice(0,7)) U.month=t.slice(0,7);
   lastDay=t; store.touch(); renderAll();
 });
+
+/* ---------- 구글 드라이브 동기화 ---------- */
+let SY={state:null,busy:false,conflict:null};
+const syncOpt=()=>({configured:gsync.configured(), embedded:gsync.embedded(), state:SY.state, pending:gsync.pending(), busy:SY.busy, conflict:SY.conflict, localAt:S.localUpdatedAt});
+function openSettings(extra={}){ gsync.preload(); sheetSettings({canInstall:!!installEvt, sync:syncOpt(), ...extra}); }
+function refreshSync(){
+  const el=$('#sync-sec'); if(el && sheetOpen()) el.innerHTML='<h3>구글 드라이브 동기화</h3>'+syncBlock(syncOpt());
+  $('.top .icon-btn')?.classList.toggle('dot', !!SY.state && (gsync.pending() || !!SY.conflict));
+}
+async function doSync({interactive=false, force}={}){
+  if(SY.busy) return;
+  SY.busy=true; refreshSync();
+  try{
+    const r=await gsync.sync({interactive, force});
+    SY.state=await gsync.syncState();
+    if(r.action==='conflict'){ SY.conflict=r.remote; if(interactive) toast('양쪽 모두 바뀌었습니다 · 남길 쪽을 골라 주세요'); else toast('동기화 확인이 필요합니다',{action:'열기',onAction:()=>openSettings()}); }
+    else { SY.conflict=null; }
+    if(r.action==='down'){ resetSel(); U.month=today().slice(0,7); U.day=today(); renderAll(); toast(`드라이브에서 불러왔습니다 · 의류 ${r.counts.count}벌 · 기록 ${r.counts.records}일`); }
+    if(r.action==='up' && interactive) toast('드라이브에 저장했습니다');
+    if(r.action==='none' && interactive) toast('이미 최신 상태입니다');
+    if(r.needLogin && interactive) toast('구글 연결이 필요합니다');
+  }catch(e){ if(interactive || !e.auth) fail(e); }
+  finally{ SY.busy=false; refreshSync(); }
+}
+let syncT=0;
+store.hooks.onChange=()=>{ refreshSync(); clearTimeout(syncT); if(SY.state?.auto!==false && SY.state && gsync.hasToken()) syncT=setTimeout(()=>doSync(),4000); };
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && SY.state?.auto!==false && SY.state && gsync.hasToken()) doSync(); });
 
 let bkCache=null;
 function prepBackup(){ bkCache=null; makeBackup().then(b=>{ bkCache=b; }).catch(()=>{}); }
@@ -62,7 +90,13 @@ document.addEventListener('click',async e=>{
   }
   switch(act){
     case 'close': closeSheet(); break;
-    case 'settings': pendingRestore=null; sheetSettings({canInstall:!!installEvt}); storageInfo(); prepBackup(); break;
+    case 'settings': pendingRestore=null; openSettings({}); storageInfo(); prepBackup(); break;
+    case 'sync-connect': SY.state=null; await doSync({interactive:true}); break;
+    case 'sync-now': await doSync({interactive:true}); break;
+    case 'sync-up': await doSync({interactive:true,force:'up'}); break;
+    case 'sync-down': await doSync({interactive:true,force:'down'}); break;
+    case 'sync-auto': await gsync.setAuto(SY.state?.auto===false); SY.state=await gsync.syncState(); refreshSync(); break;
+    case 'sync-off': await gsync.disconnect(); SY={state:null,busy:false,conflict:null}; refreshSync(); toast('구글 연결을 해제했습니다'); break;
     case 'backup-copy': {
       // 클립보드 쓰기는 클릭 직후(await 전)에 호출해야 허용되는 환경이 있어 미리 만든 내용을 쓴다
       const ready=bkCache;
@@ -70,17 +104,17 @@ document.addEventListener('click',async e=>{
       const copy = ready && navigator.clipboard?.writeText ? navigator.clipboard.writeText(ready.text) : Promise.reject();
       const bk=await run;
       try{ await copy; toast(`백업 내용을 복사했습니다 · 의류 ${bk.count}벌 · 사진 ${bk.photos}장 · 기록 ${bk.records}일`); }
-      catch(_){ sheetSettings({copyText:bk.text,canInstall:!!installEvt}); const t=$('#copy-box'); t?.focus(); t?.select(); }
+      catch(_){ openSettings({copyText:bk.text}); const t=$('#copy-box'); t?.focus(); t?.select(); }
       break; }
-    case 'paste-open': pendingRestore=null; sheetSettings({paste:true,canInstall:!!installEvt}); $('#paste-box')?.focus(); break;
-    case 'paste-load': { const v=$('#paste-box')?.value; pendingRestore=await parseBackupText(v); sheetSettings({restore:pendingRestore,canInstall:!!installEvt}); break; }
-    case 'ask-reset': sheetSettings({reset:true,canInstall:!!installEvt}); break;
-    case 'reset': await store.resetAll(); closeSheet(); U.recIdx=0; renderAll(); toast('모든 데이터가 초기화되었습니다'); break;
+    case 'paste-open': pendingRestore=null; openSettings({paste:true}); $('#paste-box')?.focus(); break;
+    case 'paste-load': { const v=$('#paste-box')?.value; pendingRestore=await parseBackupText(v); openSettings({restore:pendingRestore}); break; }
+    case 'ask-reset': openSettings({reset:true}); break;
+    case 'reset': await store.resetAll(); await gsync.forget(); SY.state=await gsync.syncState(); closeSheet(); U.recIdx=0; renderAll(); toast('모든 데이터가 초기화되었습니다'); break;
     case 'load-seed': { const n=await store.loadSeed(); resetSel(); if(sheetOpen()) closeSheet(); U.cat='all'; renderAll(); toast(`기본 옷 ${n}벌을 불러왔습니다`); break; }
     case 'backup': { toast('백업 파일을 만드는 중…'); const bk=await makeBackup(); await saveFile(bk); toast(window.self!==window.top?'파일 저장이 막힌 화면이면 ‘백업 내용 복사’를 이용하세요':`백업 완료 · 의류 ${bk.count}벌 · 사진 ${bk.photos}장 · 기록 ${bk.records}일`); break; }
     case 'restore-yes': { if(!pendingRestore) break; await applyBackup(pendingRestore); pendingRestore=null; closeSheet(); resetSel(); U.cat='all'; U.month=today().slice(0,7); U.day=today(); renderAll(); toast('백업 파일로 복원했습니다'); break; }
     case 'install': if(installEvt){ installEvt.prompt(); await installEvt.userChoice; installEvt=null; $('#install-sec')?.setAttribute('hidden',''); } break;
-    case 'sub-del': await store.removeSub(d.cat,d.name); sheetSettings({canInstall:!!installEvt}); toast('세부 유형을 삭제했습니다'); break;
+    case 'sub-del': await store.removeSub(d.cat,d.name); openSettings({}); toast('세부 유형을 삭제했습니다'); break;
 
     case 'start-seed': case 'start-empty': await store.initialize(act==='start-seed'); $('#app').classList.remove('welcome'); resetSel(); renderAll(); toast(act==='start-seed'?'기본 옷 34벌로 시작합니다':'빈 옷장으로 시작합니다. 등록 버튼으로 옷을 추가하세요'); break;
     case 'onlywash': U.onlyWash=!U.onlyWash; renderWardrobe(); break;
@@ -171,7 +205,7 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='restore' && e.target.files[0]){
     const f=e.target.files[0]; e.target.value='';
     pendingRestore=await parseBackup(f);
-    sheetSettings({restore:pendingRestore,canInstall:!!installEvt});
+    openSettings({restore:pendingRestore});
   }
   }catch(err){ fail(err); if(e.target.type==='file') e.target.value=''; }
 });
@@ -291,6 +325,8 @@ function renderWelcome(){
     navigator.storage?.persist?.().catch(()=>{});
     if(S.firstRun){ renderWelcome(); }
     else { resetSel(); renderAll(); }
+    SY.state=await gsync.syncState(); refreshSync();
+    if(SY.state && SY.state.auto!==false && gsync.hasToken()) doSync();
     document.documentElement.classList.add('ready');
   }catch(err){
     console.error(err);

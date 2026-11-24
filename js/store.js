@@ -26,6 +26,7 @@ export async function load(){
     await migrate();
   }
   S.records = records;
+  S.localUpdatedAt = (await db.get('meta','localUpdatedAt')) || 0;
   S.customSubs = Array.isArray(subs)? subs : [];
   if(prefs) S.prefs = {...S.prefs, ...prefs};
   for(const k of photoKeys){ const b=await db.get('photos',k); if(b instanceof Blob) S.photoUrls.set(k, URL.createObjectURL(b)); }
@@ -81,7 +82,15 @@ export async function initialize(withSeed){
   if(items.length) await db.putMany('items', items);
   await db.put('meta', {at:Date.now(), dataVersion:DATA_VERSION}, 'initialized');
   await db.put('meta', ['ochre','puffer','khaki1'], 'migrations');
-  S.items = items; S.firstRun = false; touch();
+  dirty(); S.items = items; S.firstRun = false; touch();
+}
+
+/* ---------- 변경 표시 (드라이브 동기화용) ---------- */
+export const hooks={ onChange:null };
+export function dirty(){
+  S.localUpdatedAt=Date.now();
+  db.put('meta',S.localUpdatedAt,'localUpdatedAt').catch(()=>{});
+  hooks.onChange?.();
 }
 
 /* ---------- 집계 (메모) ---------- */
@@ -114,10 +123,10 @@ export async function addSub(cat,name,t){
   name=name.trim().slice(0,20);
   if(!name) throw new Error('세부 유형 이름을 입력해 주세요');
   if(subsOf(cat).some(s=>s.name===name)) throw new Error('이미 있는 세부 유형입니다');
-  S.customSubs.push({cat,name,t}); await db.put('meta',S.customSubs,'subs');
+  S.customSubs.push({cat,name,t}); await db.put('meta',S.customSubs,'subs'); dirty();
 }
 export async function removeSub(cat,name){
-  S.customSubs = S.customSubs.filter(s=>!(s.cat===cat&&s.name===name)); await db.put('meta',S.customSubs,'subs');
+  S.customSubs = S.customSubs.filter(s=>!(s.cat===cat&&s.name===name)); await db.put('meta',S.customSubs,'subs'); dirty();
 }
 
 /* ---------- 의류 ---------- */
@@ -133,7 +142,7 @@ export async function saveItem(form, photo){ // photo: Blob(교체) | null(삭�
   else if(photo===null){ await db.del('photos',it.id); setPhotoUrl(it.id,null); it.hasPhoto=false; }
   await db.put('items',it);
   if(prev) Object.assign(prev,it); else S.items.push(it);
-  touch(); return it;
+  touch(); dirty(); return it;
 }
 function setPhotoUrl(id,blob){
   const old=S.photoUrls.get(id); if(old) URL.revokeObjectURL(old);
@@ -143,17 +152,17 @@ export async function deleteItem(id){
   await db.del('items',id); await db.del('photos',id); setPhotoUrl(id,null);
   S.items = S.items.filter(i=>i.id!==id);
   for(const k of CATS) if(S.ui.sel[k]===id) delete S.ui.sel[k];
-  touch();
+  touch(); dirty();
 }
 export async function saveOrder(ids){
   const changed=[]; ids.forEach((id,i)=>{ const it=byId(id); if(it && it.order!==i){ it.order=i; changed.push(it); } });
-  if(changed.length) await db.putMany('items',changed);
+  if(changed.length){ await db.putMany('items',changed); dirty(); }
 }
 export async function washItem(id){
   const it=byId(id); const prev={washedAt:it.washedAt, baseSince:it.baseSince};
-  it.washedAt=Date.now(); it.baseSince=0; await db.put('items',it); touch(); return prev;
+  it.washedAt=Date.now(); it.baseSince=0; await db.put('items',it); touch(); dirty(); return prev;
 }
-export async function undoWash(id,prev){ const it=byId(id); if(!it) return; Object.assign(it,prev); await db.put('items',it); touch(); }
+export async function undoWash(id,prev){ const it=byId(id); if(!it) return; Object.assign(it,prev); await db.put('items',it); touch(); dirty(); }
 
 /* ---------- 착장 기록 (하루 1기록, 확정 시에만 생성) ---------- */
 export async function confirmRecord(date, sel){
@@ -164,31 +173,37 @@ export async function confirmRecord(date, sel){
   const rec={date, sel:clean, ts: date===today()? Date.now() : (ex?.ts || dayTs(date)), updated:Date.now()};
   await db.put('records',rec);
   if(ex) Object.assign(ex,rec); else S.records.push(rec);
-  touch(); return !!ex;
+  touch(); dirty(); return !!ex;
 }
-export async function deleteRecord(date){ await db.del('records',date); S.records=S.records.filter(r=>r.date!==date); touch(); }
+export async function deleteRecord(date){ await db.del('records',date); S.records=S.records.filter(r=>r.date!==date); touch(); dirty(); }
 
 /* ---------- 환경설정 ---------- */
-export async function setPref(k,v){ S.prefs[k]=v; await db.put('meta',S.prefs,'prefs'); }
+export async function setPref(k,v){ S.prefs[k]=v; await db.put('meta',S.prefs,'prefs'); dirty(); }
 
 /* ---------- 초기화 · 기본 목록 ---------- */
 export async function resetAll(){
-  await db.replaceAll({meta:[['initialized',{at:Date.now(),dataVersion:DATA_VERSION}],['prefs',S.prefs]]});
+  const keep=await keepMeta();
+  await db.replaceAll({meta:[...keep,['initialized',{at:Date.now(),dataVersion:DATA_VERSION}],['prefs',S.prefs]]});
   for(const u of S.photoUrls.values()) URL.revokeObjectURL(u);
   S.photoUrls.clear(); S.items=[]; S.records=[]; S.customSubs=[]; S.ui.sel={}; S.ui.editing=null; touch();
 }
 export async function loadSeed(){
   const base = Math.max(-1,...S.items.map(i=>i.order))+1;
   const add = seedItems().map((it,i)=>({...it, id:uid(it.id+'-'), order:base+i}));
-  await db.putMany('items',add); S.items.push(...add); touch(); return add.length;
+  await db.putMany('items',add); S.items.push(...add); touch(); dirty(); return add.length;
 }
 /* 복원: 검증이 끝난 데이터로 전체 교체 */
-export async function replaceData({items,records,photos,customSubs,prefs}){
-  await db.replaceAll({items, records, photos, meta:[['initialized',{at:Date.now(),dataVersion:DATA_VERSION}],['subs',customSubs],['prefs',{...S.prefs,...prefs}]]});
+export async function replaceData({items,records,photos,customSubs,prefs},{fromSync=false}={}){
+  const keep=await keepMeta();
+  await db.replaceAll({items, records, photos, meta:[...keep,['initialized',{at:Date.now(),dataVersion:DATA_VERSION}],['subs',customSubs],['prefs',{...S.prefs,...prefs}]]});
   for(const u of S.photoUrls.values()) URL.revokeObjectURL(u);
   S.photoUrls.clear();
   for(const [k,b] of photos) S.photoUrls.set(k,URL.createObjectURL(b));
   S.items=items; S.records=records; S.customSubs=customSubs; S.prefs={...S.prefs,...prefs};
-  S.ui.sel={}; S.ui.editing=null; touch();
+  S.ui.sel={}; S.ui.editing=null; S.ui.lock={}; touch(); if(!fromSync) dirty();
 }
+/* 데이터 교체 시에도 유지하는 기기 설정(동기화 연결 정보 등) */
+async function keepMeta(){ const out=[]; for(const k of ['sync','migrations']){ const v=await db.get('meta',k); if(v!==undefined) out.push([k,v]); } return out; }
+export const getMeta = k=>db.get('meta',k);
+export const setMeta = (k,v)=>db.put('meta',v,k);
 export async function photoBlob(id){ return db.get('photos',id); }

@@ -98,11 +98,27 @@ export function drawForm(keep=true){
   if(keep) document.querySelectorAll('#sheet .shapes').forEach((el,i)=>{ if(xs[i]) el.scrollLeft=xs[i]; });
 }
 
+/* ---------- 설정 · 동기화 영역 ---------- */
+const hm=t=>{ const d=new Date(t); return `${d.getMonth()+1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+export function syncBlock(o){
+  if(!o.configured) return `<div class="set-row"><span><div class="t">준비 중</div><div class="d">구글 클라우드 연결 설정이 끝나면 사용할 수 있습니다</div></span></div>`;
+  if(o.embedded) return `<div class="set-row"><span><div class="t">배포 주소에서 사용할 수 있습니다</div><div class="d">이 미리보기 화면에서는 구글 로그인이 막혀 있습니다</div></span></div>`;
+  if(!o.state) return `<button class="set-row" data-act="sync-connect"><span><div class="t">구글 계정 연결</div><div class="d">내 구글 드라이브의 앱 전용 폴더에 옷장 데이터를 저장해 PC·휴대폰에서 함께 씁니다</div></span>${IC.chev}</button>`;
+  const s=o.state;
+  return `<div class="set-row"><span><div class="t">${esc(s.email||'연결됨')}</div><div class="d">${s.lastSyncAt?`마지막 동기화 ${hm(s.lastSyncAt)}`:'아직 동기화하지 않음'}${o.pending?' · 이 기기에 올리지 않은 변경 있음':''}</div></span></div>
+    ${o.conflict?`<div class="confirm-del"><span><b>양쪽 모두 바뀌었습니다.</b> 어느 쪽을 남길지 골라 주세요. 고르지 않은 쪽 내용은 사라집니다.<br>드라이브: ${esc(o.conflict.device||'다른 기기')} · ${hm(Date.parse(o.conflict.at)||Date.now())} 저장<br>이 기기: ${o.localAt?hm(o.localAt):'-'} 수정 · 의류 ${S.items.length}벌 · 기록 ${S.records.length}일</span>
+      <div class="r r-col"><button class="btn btn-dark btn-sm" data-act="sync-down">드라이브 내용 불러오기</button><button class="btn btn-line btn-sm" data-act="sync-up">이 기기 내용으로 덮어쓰기</button></div></div>`:''}
+    <button class="set-row" data-act="sync-now"${o.busy?' disabled':''}><span><div class="t">${o.busy?'동기화 중…':'지금 동기화'}</div><div class="d">바뀐 쪽을 확인해 올리거나 불러옵니다</div></span>${IC.chev}</button>
+    <button class="set-row" role="switch" aria-checked="${s.auto!==false}" data-act="sync-auto"><span><div class="t">자동 동기화</div><div class="d">앱을 열 때와 수정할 때 자동으로 동기화 (로그인은 1시간 유지)</div></span><span class="radio"></span></button>
+    <button class="set-row" data-act="sync-off"><span><div class="t">연결 해제</div><div class="d">이 기기의 데이터와 드라이브의 데이터는 그대로 남습니다</div></span>${IC.chev}</button>`;
+}
+
 /* ---------- 설정 ---------- */
 export function sheetSettings(opt={}){
   const custom=S.customSubs;
   openSheet(`<div class="sheet-h gx"><h2 id="sheet-title" tabindex="-1">설정</h2><button class="btn-text" data-act="close">닫기</button></div>
   <div class="sheet-b gx">
+    <div class="set-sec" id="sync-sec"><h3>구글 드라이브 동기화</h3>${syncBlock(opt.sync||{})}</div>
     <div class="set-sec"><h3>데이터</h3>
       <button class="set-row" data-act="backup"><span><div class="t">백업 파일 만들기</div><div class="d">의류 · 사진 · 착장 기록 · 설정을 JSON 파일로 저장</div></span>${IC.chev}</button>
       <button class="set-row" data-act="backup-copy"><span><div class="t">백업 내용 복사</div><div class="d">파일 저장이 안 되는 화면용 · 복사한 내용을 ‘붙여넣어 복원’에 넣습니다</div></span>${IC.chev}</button>
