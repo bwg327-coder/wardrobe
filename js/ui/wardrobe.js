@@ -33,7 +33,7 @@ export function renderWardrobe(){
   $('#v-wardrobe').innerHTML=`
   <div class="h1 gx"><h1>옷장<span class="num">${S.items.length}</span></h1>
     ${u.reorder?'':`<button class="btn btn-dark btn-sm" data-act="add">${IC.plus}등록</button>`}</div>
-  ${u.reorder?'':`<label class="search"><span class="sr">검색</span>${IC.search}<input id="q" type="search" enterkeyhint="search" placeholder="제품명, 컬러, 유형 검색" value="${esc(u.q)}" autocomplete="off"></label>`}
+  ${u.reorder?'':`<label class="search"><span class="sr">검색</span>${IC.search}<input id="q" type="search" enterkeyhint="search" placeholder="브랜드, 제품명, 컬러, 유형 검색" value="${esc(u.q)}" autocomplete="off"></label>`}
   <div class="cats gx" role="group" aria-label="분류">${['all',...CATS].map(k=>`<button class="cat" data-cat="${k}" aria-pressed="${u.cat===k}">${k==='all'?'전체':CAT[k]}<span class="num">${cnt(k)}</span></button>`).join('')}</div>
   ${u.reorder?`<div class="tools gx reo"><span>핸들을 잡고 위아래로 끌어 순서를 바꾸세요</span><button class="btn btn-dark btn-sm" data-act="reorder-done">완료</button></div>`:`
   <div class="tools gx">
@@ -54,14 +54,14 @@ export function renderList(){
   const all=S.items.map(i=>({i,s:stats(i)}));
   let list = u.reorder ? all.filter(x=>u.cat==='all'||x.i.cat===u.cat)
     : all.filter(x=>(u.cat==='all'||x.i.cat===u.cat)&&(!u.onlyWash||x.s.state!=='ok')
-      &&(!q||[x.i.name,x.i.colorName,x.i.sub,CAT[x.i.cat]].join(' ').toLowerCase().includes(q)));
+      &&(!q||[x.i.brand,x.i.name,x.i.colorName,x.i.sub,CAT[x.i.cat]].join(' ').toLowerCase().includes(q)));
   const ci=x=>CATS.indexOf(x.i.cat);
   list.sort((a,b)=>ci(a)-ci(b)||sorters[u.reorder?'custom':S.prefs.sort](a,b));
   let rows='', lastCat=null;
   for(const {i,s} of list){
     if(u.cat==='all' && i.cat!==lastCat){ rows+=`<div class="ghead gx"><span>${CAT[i.cat]}</span><span class="num">${list.filter(x=>x.i.cat===i.cat).length}</span></div>`; lastCat=i.cat; }
     const body=`<div class="ph">${thumb(i)}</div>
-      <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div><div class="name">${esc(i.name)}</div>
+      <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div>${i.brand?`<div class="brand">${esc(i.brand)}</div>`:''}<div class="name">${esc(i.name)}</div>
         <div class="color"><i class="sw" style="background:${i.color}"></i>${esc(i.colorName)}</div></div>`;
     rows += u.reorder
       ? `<div class="row gx edit" data-id="${i.id}" data-cat="${i.cat}">${body}<button class="handle" aria-label="${esc(i.name)} ${esc(i.colorName)} 순서 이동, 위아래 화살표로 이동">${IC.grip}</button></div>`

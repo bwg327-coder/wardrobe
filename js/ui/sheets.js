@@ -13,7 +13,7 @@ export function sheetDetail(id,ask=false){
   openSheet(`<div class="sheet-h gx"><h2 id="sheet-title" tabindex="-1">의류 정보</h2><button class="btn-text" data-act="close">닫기</button></div>
   <div class="sheet-b gx">
     <div class="det-top"><div class="ph">${thumb(i)}</div>
-      <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div><div class="name">${esc(i.name)}</div>
+      <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div>${i.brand?`<div class="brand">${esc(i.brand)}</div>`:''}<div class="name">${esc(i.name)}</div>
       <div class="color"><i class="sw" style="background:${i.color}"></i>${esc(i.colorName)}</div>
       <div class="det-big"><div><b>${s.total}</b><span>누적 착장</span></div><div><b>${s.since}</b><span>세탁 후 착장</span></div></div>
       ${i.wash?`<div class="bar" aria-hidden="true"><i style="width:${Math.min(100,s.since/i.wash*100)}%"></i></div>`:''}
@@ -39,7 +39,7 @@ export let form=null;
 export function sheetForm(id){
   const i=id?byId(id):null;
   form = i? {...i, photoBlob:undefined, previewUrl:null} :
-    {id:null,cat:'top',sub:'티셔츠',t:'tee',name:'',colorName:'화이트',color:'#f4f3ef',wash:2,base:0,baseSince:0,hasPhoto:false,photoBlob:undefined,previewUrl:null};
+    {id:null,cat:'top',sub:'티셔츠',t:'tee',brand:'',name:'',colorName:'화이트',color:'#f4f3ef',wash:2,base:0,baseSince:0,hasPhoto:false,photoBlob:undefined,previewUrl:null};
   form.addSub=null; form.noAlpha=false;
   drawForm(false);
 }
@@ -69,6 +69,7 @@ export function drawForm(keep=true){
         <div class="r"><button class="btn btn-line btn-sm" data-act="sub-cancel">취소</button><button class="btn btn-dark btn-sm" data-act="sub-save">추가</button></div>
       </div>`:''}
     </div>
+    <div class="f"><label for="f-brand">브랜드 <span class="opt-l">선택</span></label><input id="f-brand" type="text" maxlength="40" placeholder="예) 유니클로" value="${esc(f.brand||'')}" autocomplete="off"></div>
     <div class="f"><label for="f-name">제품명</label><input id="f-name" type="text" maxlength="60" placeholder="예) 헨리넥 롱슬리브" value="${esc(f.name)}"></div>
     <div class="f"><span class="lbl">컬러</span>
       <div class="swatches">${PALETTE.map(([n,h])=>`<button class="swb" data-f-color="${h}" data-n="${n}" aria-pressed="${f.color===h}"><i style="background:${h}"></i>${n}</button>`).join('')}

@@ -38,7 +38,7 @@ export function normalizeItem(i){
   if(!shapeOk(it.cat,it.t)) it.t = SHAPES[it.cat][0][0];
   it.wash = clampInt(it.wash,0,99,5); // 0 = 세탁 기준 없음 it.base=clampInt(it.base,0,9999,0); it.baseSince=clampInt(it.baseSince,0,9999,0);
   it.order = Number.isFinite(it.order)? it.order : 9999;
-  it.name = String(it.name||'').slice(0,60); it.colorName=String(it.colorName||'').slice(0,30); it.sub=String(it.sub||'').slice(0,20);
+  it.name = String(it.name||'').slice(0,60); it.brand=String(it.brand||'').slice(0,40); it.colorName=String(it.colorName||'').slice(0,30); it.sub=String(it.sub||'').slice(0,20);
   it.washedAt = Number.isFinite(it.washedAt)? it.washedAt : null;
   it.created = Number.isFinite(it.created)? it.created : Date.now();
   it.hasPhoto = !!it.hasPhoto;

@@ -125,6 +125,7 @@ function syncForm(){
   if(!form) return;
   const v=id=>$('#'+id)?.value;
   if(v('f-name')!==undefined) form.name=v('f-name').trim();
+  if(v('f-brand')!==undefined) form.brand=v('f-brand').trim();
   if(v('f-cname')!==undefined) form.colorName=v('f-cname').trim();
   if(form.addSub && v('f-subname')!==undefined) form.addSub.name=v('f-subname');
 }

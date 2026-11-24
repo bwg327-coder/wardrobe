@@ -325,3 +325,6 @@ main{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolli
 .wash-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .wash-row .chip{height:44px}
 .shapes{position:relative}
+.brand{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--ink2);line-height:1.3;margin-bottom:-2px;word-break:keep-all;overflow-wrap:anywhere}
+.det-top .brand{font-size:12.5px}
+.opt-l{color:var(--faint);margin-left:4px}
