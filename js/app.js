@@ -1,7 +1,7 @@
 /* WARDROBE — 앱 진입점: 부팅 · 이벤트 위임 · 순서 편집 드래그 · PWA */
 import * as store from './store.js';
 import { S, byId, recordOn, stats } from './store.js';
-import { CATS, PALETTE } from './const.js';
+import { CATS, SLOTS, PALETTE, isCardigan } from './const.js';
 import { recommend } from './recommend.js';
 import { prepPhoto } from './image.js';
 import { makeBackup, saveFile, parseBackup, parseBackupText, applyBackup } from './backup.js';
@@ -65,10 +65,12 @@ function resetSel(){ U.recIdx=0; U.sel={}; U.lock={}; }
 /* 사용자가 고른 분류(lock)는 두고, 나머지 분류를 그 옷에 맞춰 추천으로 채운다 */
 function fillRest(idx=0){
   const r=recommend(idx,{...U.lock});
-  for(const k of CATS) if(!(k in U.lock)){ if(r.sel[k]) U.sel[k]=r.sel[k]; else delete U.sel[k]; }
+  for(const k of SLOTS) if(!(k in U.lock)){ if(r.sel[k]) U.sel[k]=r.sel[k]; else delete U.sel[k]; }
   return r;
 }
-const lockAll=()=>{ U.lock={}; for(const k of CATS) U.lock[k]=U.sel[k]||null; };
+const lockAll=()=>{ U.lock={}; for(const k of SLOTS) U.lock[k]=U.sel[k]||null; };
+/* 예전 기록처럼 가디건이 아우터 칸에 있으면 가디건 칸으로 옮긴다 */
+const normSel=sel=>{ const s={...sel}; for(const k of SLOTS) if(!byId(s[k])) delete s[k]; if(s.outer&&!s.mid&&isCardigan(byId(s.outer))){ s.mid=s.outer; delete s.outer; } return s; };
 
 /* ---------- 클릭 ---------- */
 document.addEventListener('click',async e=>{
@@ -77,7 +79,13 @@ document.addEventListener('click',async e=>{
   try{
   if(d.tab){ U.tab=d.tab; if(sheetOpen()) closeSheet(); renderTabs(); if(U.tab==='coord') renderCoord(); $('#main').scrollTop=0; return; }
   if(d.cat && !act){ U.cat=d.cat; renderWardrobe(); return; }
-  if(d.pick!==undefined){ const k=d.pick; if(d.id) U.sel[k]=d.id; else delete U.sel[k]; U.lock[k]=d.id||null; U.recIdx=0; fillRest(0); keepY(renderCoord); return; }
+  if(d.pick!==undefined){
+    let k=d.pick;
+    if(k==='outer' && !d.id){ delete U.sel.outer; delete U.sel.mid; U.lock.outer=null; U.lock.mid=null; }
+    else if(k==='outer' && isCardigan(byId(d.id))){ // 가디건: 패딩·코트와 함께 고를 수 있고, 다시 누르면 해제
+      if(U.sel.mid===d.id){ delete U.sel.mid; U.lock.mid=null; } else { U.sel.mid=d.id; U.lock.mid=d.id; }
+    } else { if(d.id) U.sel[k]=d.id; else delete U.sel[k]; U.lock[k]=d.id||null; }
+    U.recIdx=0; fillRest(0); keepY(renderCoord); return; }
   if(d.day){ U.day=d.day; U.delAsk=false; renderLog(); return; }
   if(d.month){ const [y,m]=U.month.split('-').map(Number); const n=new Date(y,m-1+Number(d.month),1); U.month=`${n.getFullYear()}-${pad(n.getMonth()+1)}`; U.day=U.month===today().slice(0,7)?today():U.month+'-01'; U.delAsk=false; renderLog(); return; }
   if(form){
@@ -147,7 +155,7 @@ document.addEventListener('click',async e=>{
 
     case 'rec-all': { U.lock={}; U.recIdx=0; const r=fillRest(0); renderCoord(); $('#main').scrollTop=0; toast(r.count?'세탁 주기 · 최근 코디 · 컬러 조합으로 오늘의 코디를 골랐습니다':'추천할 수 있는 옷이 없습니다 · 세탁 권장 상태를 확인해 주세요'); break; }
     case 'recommend': {
-      if(CATS.every(k=>k in U.lock)){ toast('모든 분류를 직접 골랐습니다 · 초기화하면 다시 추천받을 수 있습니다'); break; }
+      if(CATS.every(k=>k in U.lock || (k==='outer' && 'mid' in U.lock))){ toast('모든 분류를 직접 골랐습니다 · 초기화하면 다시 추천받을 수 있습니다'); break; }
       const r=fillRest(++U.recIdx); renderCoord(); toast(r.count>1?`다른 추천 ${(U.recIdx%r.count)+1}/${r.count}`:'다른 조합이 없습니다'); break; }
     case 'sel-clear': resetSel(); keepY(renderCoord); break;
     case 'confirm': {
@@ -157,8 +165,8 @@ document.addEventListener('click',async e=>{
       U.editing=null; U.month=date.slice(0,7); U.day=date; renderAll(); break;
     }
     case 'cancel-edit': U.editing=null; resetSel(); renderCoord(); break;
-    case 'rewear': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; lockAll(); U.editing=null; U.tab='coord'; renderAll(); $('#main').scrollTop=0; toast('이전 코디를 불러왔습니다. 확정하면 오늘 기록이 됩니다'); break; }
-    case 'edit-rec': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; lockAll(); U.editing=U.day; U.tab='coord'; renderAll(); $('#main').scrollTop=0; break; }
+    case 'rewear': { const r=recordOn(U.day); U.sel=normSel(r.sel); lockAll(); U.editing=null; U.tab='coord'; renderAll(); $('#main').scrollTop=0; toast('이전 코디를 불러왔습니다. 확정하면 오늘 기록이 됩니다'); break; }
+    case 'edit-rec': { const r=recordOn(U.day); U.sel=normSel(r.sel); lockAll(); U.editing=U.day; U.tab='coord'; renderAll(); $('#main').scrollTop=0; break; }
     case 'add-rec': U.editing=U.day===today()?null:U.day; if(U.editing) resetSel(); U.tab='coord'; renderAll(); $('#main').scrollTop=0; break;
     case 'month-today': U.month=today().slice(0,7); U.day=today(); U.delAsk=false; renderLog(); break;
     case 'del-rec': U.delAsk=true; renderLog(); break;

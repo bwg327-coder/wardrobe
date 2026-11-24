@@ -1,6 +1,6 @@
 /* 착장 기록 화면 (월간 캘린더) */
 import { S, byId, recordOn, selItems } from '../store.js';
-import { CAT, CATS } from '../const.js';
+import { CAT, CATS, SLOTS, SLOT_NAME } from '../const.js';
 import { outfit } from '../garments.js';
 import { esc, $, pad, today, fmtMDW, WK } from '../util.js';
 import { IC } from './common.js';
@@ -30,7 +30,7 @@ export function renderLog(){
   <div class="dd gx">
     <div class="dd-h"><h3>${fmtMDW(u.day)}</h3><span>${sel?'착장 기록':''}</span></div>
     ${sel?`<div class="dd-b"><div class="dd-img">${outfit(selItems(sel.sel))}</div>
-      <div class="dd-list">${CATS.filter(k=>sel.sel[k]).map(k=>{const i=byId(sel.sel[k]);return `<div class="dd-it"><div class="c">${CAT[k]}</div><div class="n">${i?esc(i.name)+' ['+esc(i.colorName)+']':'<span class="gone">삭제된 의류</span>'}</div></div>`;}).join('')}</div></div>
+      <div class="dd-list">${SLOTS.filter(k=>sel.sel[k]).map(k=>{const i=byId(sel.sel[k]);return `<div class="dd-it"><div class="c">${SLOT_NAME[k]}</div><div class="n">${i?esc(i.name)+' ['+esc(i.colorName)+']':'<span class="gone">삭제된 의류</span>'}</div></div>`;}).join('')}</div></div>
       <div class="dd-act"><button class="btn btn-dark" data-act="rewear">다시 입기</button><button class="btn btn-line" data-act="edit-rec">수정</button><button class="btn btn-line" data-act="del-rec">삭제</button></div>
       ${u.delAsk?`<div class="confirm-del"><span>이 기록을 삭제하면 포함된 의류의 착장 횟수가 1회씩 줄어듭니다.</span><div class="r"><button class="btn btn-line btn-sm" data-act="del-no">취소</button><button class="btn btn-dark btn-sm" data-act="del-yes">삭제</button></div></div>`:''}`
     :`<div class="dd-none"><span>${u.day>T?'아직 오지 않은 날짜입니다.':'이 날의 착장 기록이 없습니다.'}</span>${u.day<=T&&S.items.length?`<button class="btn btn-line btn-sm" data-act="add-rec">${u.day===T?'오늘 코디 기록하기':'이 날짜에 코디 기록하기'}</button>`:''}</div>`}

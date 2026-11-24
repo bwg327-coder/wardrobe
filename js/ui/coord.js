@@ -1,6 +1,6 @@
 /* 데일리 코디 화면 */
 import { S, stats, byId, recordOn, selItems } from '../store.js';
-import { CAT, CATS } from '../const.js';
+import { CAT, CATS, SLOTS } from '../const.js';
 import { thumb, outfit } from '../garments.js';
 import { esc, $, today, fmtMD, fmtMDW } from '../util.js';
 import { IC } from './common.js';
@@ -8,11 +8,12 @@ import { IC } from './common.js';
 export function renderCoord(){
   const u=S.ui, T=today();
   const isRec=k=>!!u.sel[k] && !(k in u.lock);
+  const slotOf=(k,id)=> k==='outer' && u.sel.mid===id ? 'mid' : k;
   const date=u.editing||T;
   const existing=recordOn(date);
   const cur=selItems(u.sel);
   const picked=Object.values(cur);
-  const same = existing && CATS.every(k=>(existing.sel[k]||null)===(cur[k]?.id||null));
+  const same = existing && SLOTS.every(k=>(existing.sel[k]||null)===(cur[k]?.id||null));
   const empty=!picked.length;
   const label = empty ? (u.editing?'추천 코디로 채우기':'오늘의 추천 코디 보기')
     : u.editing ? (existing? (same?'변경 사항 없음':`${fmtMD(date)} 기록 수정 저장`) : `${fmtMD(date)} 착장 기록 저장`)
@@ -35,13 +36,16 @@ export function renderCoord(){
   </div>
   ${CATS.map(k=>{
     const items=S.items.filter(i=>i.cat===k).sort((a,b)=>a.order-b.order); const c=cur[k];
+    const on=i=> (!!c&&c.id===i.id) || (k==='outer'&&cur.mid?.id===i.id);
+    const head = k==='outer' ? [cur.outer,cur.mid].filter(Boolean).map(x=>esc(x.name)+' ['+esc(x.colorName)+']').join(' + ') : (c? esc(c.name)+' ['+esc(c.colorName)+']' : '');
+    const none = !c && (k in u.lock) && (k!=='outer' || (!cur.mid && ('mid' in u.lock)));
     return `<div class="pick gx">
-      <div class="pick-h"><span class="t">${CAT[k]}</span><span class="s">${c?esc(c.name)+' ['+esc(c.colorName)+']':(k in u.lock?'선택 안 함':'-')}</span>
+      <div class="pick-h"><span class="t">${CAT[k]}</span><span class="s">${head||(none?'선택 안 함':'-')}</span>
         <span class="pager"><button data-scroll="${k}" data-d="-1" aria-label="${CAT[k]} 이전 목록">${IC.left}</button><button data-scroll="${k}" data-d="1" aria-label="${CAT[k]} 다음 목록">${IC.right}</button></span></div>
       <div class="strip" data-strip="${k}" role="group" aria-label="${CAT[k]} 선택">
-        <button class="opt" data-pick="${k}" data-id="" aria-pressed="${!c && (k in u.lock)}"><span class="none">없음</span><span class="lab">생략</span></button>
-        ${items.map(i=>{const st=stats(i).state;return `<button class="opt" data-pick="${k}" data-id="${i.id}" aria-pressed="${!!c&&c.id===i.id}" aria-label="${esc(i.name)} ${esc(i.colorName)}${st==='due'?', 세탁 권장':''}">
-          <span class="ph">${thumb(i)}</span>${c&&c.id===i.id&&isRec(k)?'<span class="mk">추천</span>':''}${st==='due'?'<span class="mk w">세탁</span>':''}
+        <button class="opt" data-pick="${k}" data-id="" aria-pressed="${!head && none}"><span class="none">없음</span><span class="lab">생략</span></button>
+        ${items.map(i=>{const st=stats(i).state;return `<button class="opt" data-pick="${k}" data-id="${i.id}"  aria-pressed="${on(i)}" aria-label="${esc(i.name)} ${esc(i.colorName)}${st==='due'?', 세탁 권장':''}">
+          <span class="ph">${thumb(i)}</span>${on(i)&&isRec(slotOf(k,i.id))?'<span class="mk">추천</span>':''}${st==='due'?'<span class="mk w">세탁</span>':''}
           <span class="lab">${esc(i.sub)} · ${esc(i.colorName)}</span></button>`;}).join('')}
       </div></div>`;}).join('')}
   <div class="confirm gx${empty?'':' two'}">

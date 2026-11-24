@@ -1,5 +1,5 @@
 /* 의류 렌더러 — 패션 도식화(테크니컬 플랫) 라인 드로잉 + 의류 컬러 채움. 디자인 시안 v1에서 이식 */
-import { CATS } from './const.js';
+import { CATS, SLOTS } from './const.js';
 
 /* ---------- 색상 유틸 ---------- */
 function rgb(h){h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16));}
@@ -271,8 +271,8 @@ export function drawing(it){
    사진이 있는 의류는 배경 제거 PNG를 같은 위치·순서의 레이어로 합성한다. */
 const img = (url,b)=>`<image href="${attr(url)}" x="${b[0]}" y="${b[1]}" width="${b[2]-b[0]}" height="${b[3]-b[1]}" preserveAspectRatio="xMidYMid meet"/>`;
 export function outfit(items, opt={}){
-  const it={}; for(const k of CATS) if(items[k]) it[k]=items[k];
-  const keys=CATS.filter(k=>it[k]);
+  const it={}; for(const k of SLOTS) if(items[k]) it[k]=items[k];
+  const keys=SLOTS.filter(k=>it[k]);
   const bg=`<rect width="300" height="400" fill="#fff"/>`;
   if(!keys.length) return `<svg viewBox="0 0 300 400" aria-hidden="true">${bg}${opt.mini?'':'<text x="150" y="204" text-anchor="middle" font-size="11" fill="#9a9a96" font-family="Pretendard, sans-serif">의류를 선택하면 코디 이미지가 구성됩니다</text>'}</svg>`;
   const parts = {};
@@ -281,7 +281,8 @@ export function outfit(items, opt={}){
     if(url) parts[k] = {back:'', front:img(url, k==='shoes'? ghostShoeBB : bb(x,false))};
     else parts[k] = k==='shoes'? {back:'',front:shoesGhost(x)} : tpl(x,false);
   }
-  const order = [parts.outer?.back, parts.shoes?.front, parts.bottom?.front, parts.top?.front, parts.outer?.front];
+  // 가디건(mid)은 상의 위 · 아우터 안쪽에 겹친다
+  const order = [parts.outer?.back, parts.mid?.back, parts.shoes?.front, parts.bottom?.front, parts.top?.front, parts.mid?.front, parts.outer?.front];
   let u=[999,999,-999,-999];
   for(const k of keys){const b=k==='shoes'?ghostShoeBB:bb(it[k],false);u=[Math.min(u[0],b[0]),Math.min(u[1],b[1]),Math.max(u[2],b[2]),Math.max(u[3],b[3])];}
   const tr = fit(u,{x:22,y:20,w:256,h:350},0,1.55);

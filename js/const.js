@@ -1,13 +1,17 @@
 /* 공통 상수 */
-export const APP_VERSION = '1.8.2';
+export const APP_VERSION = '1.9.0';
 export const DATA_VERSION = 1;
 export const CAT = {outer:'아우터', top:'상의', bottom:'하의', shoes:'신발'};
 export const CATS = ['outer','top','bottom','shoes'];
+/* 코디 슬롯: 가디건은 아우터(패딩·코트 등)와 함께 입을 수 있도록 mid 슬롯에 따로 담는다 */
+export const SLOTS = ['outer','mid','top','bottom','shoes'];
+export const SLOT_NAME = {...CAT, mid:'아우터'};
+export const isCardigan = i=>!!i && i.cat==='outer' && (i.t==='cardigan' || i.sub==='가디건');
 
 /* 기본 세부 유형 → 기본 도식화 형태 */
 export const BASE_SUBS = {
-  outer:[['코트','balmacaan'],['블루종','ma1'],['자켓','denimjk'],['바람막이','windbreaker'],['패딩','puffer'],['가디건','cardigan']],
-  top:[['티셔츠','tee'],['롱슬리브','henley'],['샴브레이 셔츠','shirt'],['스웨트셔츠','sweat'],['니트','knit']],
+  outer:[['패딩','puffer'],['코트','balmacaan'],['블루종','ma1'],['자켓','denimjk'],['바람막이','windbreaker'],['가디건','cardigan']],
+  top:[['티셔츠','tee'],['롱슬리브','henley'],['니트','knit'],['샴브레이 셔츠','shirt'],['스웨트셔츠','sweat']],
   bottom:[['치노','chino'],['데님','denim'],['슬랙스','slacks']],
   shoes:[['스니커즈','sneaker'],['구두','dress']],
 };

@@ -2,7 +2,7 @@
    착장 횟수는 저장하지 않고 착장 기록(records)에서 매번 파생 계산한다.
    → 같은 날 재확정·기록 수정·삭제 시 중복 집계가 생기지 않는다. */
 import * as db from './db.js';
-import { CATS, BASE_SUBS, DATA_VERSION } from './const.js';
+import { CATS, SLOTS, BASE_SUBS, DATA_VERSION } from './const.js';
 import { seedItems, SEED_PUFFER } from './seed.js';
 import { SHAPES, shapeOk, setPhotoResolver } from './garments.js';
 import { today, dayTs, uid } from './util.js';
@@ -113,7 +113,7 @@ function buildStats(){
 }
 export function stats(it){ if(!cache) cache=buildStats(); return cache.get(it.id) || {total:0,since:0,last:null,state:'ok',dates:[]}; }
 export const recordOn = date=>S.records.find(r=>r.date===date);
-export const selItems = sel=>{ const o={}; for(const k of CATS){ const i=byId(sel?.[k]); if(i) o[k]=i; } return o; };
+export const selItems = sel=>{ const o={}; for(const k of SLOTS){ const i=byId(sel?.[k]); if(i) o[k]=i; } return o; };
 
 /* ---------- 세부 유형 ---------- */
 export function subsOf(cat){
@@ -151,7 +151,7 @@ function setPhotoUrl(id,blob){
 export async function deleteItem(id){
   await db.del('items',id); await db.del('photos',id); setPhotoUrl(id,null);
   S.items = S.items.filter(i=>i.id!==id);
-  for(const k of CATS) if(S.ui.sel[k]===id) delete S.ui.sel[k];
+  for(const k of SLOTS) if(S.ui.sel[k]===id) delete S.ui.sel[k];
   touch(); dirty();
 }
 export async function saveOrder(ids){
@@ -166,7 +166,7 @@ export async function undoWash(id,prev){ const it=byId(id); if(!it) return; Obje
 
 /* ---------- 착장 기록 (하루 1기록, 확정 시에만 생성) ---------- */
 export async function confirmRecord(date, sel){
-  const clean={}; for(const k of CATS) if(sel[k] && byId(sel[k])) clean[k]=sel[k];
+  const clean={}; for(const k of SLOTS) if(sel[k] && byId(sel[k])) clean[k]=sel[k];
   if(!Object.keys(clean).length) throw new Error('의류를 하나 이상 선택해 주세요');
   if(date>today()) throw new Error('미래 날짜에는 기록할 수 없습니다');
   const ex=recordOn(date);

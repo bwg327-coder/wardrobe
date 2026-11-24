@@ -39,7 +39,7 @@ export let form=null;
 export function sheetForm(id){
   const i=id?byId(id):null;
   form = i? {...i, photoBlob:undefined, previewUrl:null} :
-    {id:null,cat:'top',sub:'티셔츠',t:'tee',brand:'',name:'',colorName:'화이트',color:'#f4f3ef',wash:2,base:0,baseSince:0,hasPhoto:false,photoBlob:undefined,previewUrl:null};
+    {id:null,cat:'outer',sub:'패딩',t:'puffer',brand:'',name:'',colorName:'화이트',color:'#f4f3ef',wash:2,base:0,baseSince:0,hasPhoto:false,photoBlob:undefined,previewUrl:null};
   form.addSub=null; form.noAlpha=false;
   drawForm(false);
 }
