@@ -19,7 +19,7 @@ const L=[ // cat, sub, shape, name, colorName, hex, wash
   ['top','스웨트셔츠','sweat','스웨트셔츠','오트밀','#d8cdb8',4],
   ['top','니트','knit','니트','네이비','#232c45',5],
   ['top','니트','knit','니트','차콜','#3b3b3e',5],
-  ['bottom','치노','chino','치노','카키 1','#b8b09c',6],
+  ['bottom','치노','chino','치노','카키 1','#d2cfc6',6],
   ['bottom','치노','chino','치노','35 브라운','#cbb894',6],
   ['bottom','치노','chino','치노','36 브라운','#7a5638',6],
   ['bottom','치노','chino','치노','카키 2','#3f4a36',6],

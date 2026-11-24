@@ -105,7 +105,8 @@ function tCoat(c,flat){
   return {back, front:sleeve()+MIR(sleeve())+panel()+MIR(panel())+lapel()+MIR(lapel())};
 }
 function tDouble(c,flat){
-  const back = piece('M120,74 Q150,60 180,74 L178,82 Q150,72 122,82 Z',shade(c,-.12),'');
+  const back = `<path d="M124,72 Q150,64 176,72 L150,150 Z" fill="${innerC(c,flat)}" stroke="${edgeC(c)}" stroke-width="1" ${NS}/>`
+    + piece('M120,74 Q150,60 180,74 L178,82 Q150,72 122,82 Z',shade(c,-.12),'');
   const sleeve=coatSleeve(c,flat);
   let btn='';for(const y of [176,206,236])btn+=dot(134,y,c,2.6)+dot(166,y,c,2.6);
   const body=piece('M124,72 L150,150 L176,72 C186,74 194,78 200,84 C205,150 208,230 212,320 L88,320 C92,230 95,150 100,84 C106,78 114,74 124,72 Z',c,'',

@@ -310,3 +310,10 @@ main{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolli
 .pick-h .s + .pager{margin-left:auto}
 .pager button{width:32px;height:32px;display:grid;place-items:center;color:var(--ink2)}
 .pager svg{width:16px;height:16px}
+.cd-acts{display:flex;gap:14px}
+.cd-acts .btn-text{font-weight:500}
+.cd-acts .btn-text:first-child{color:var(--mute);font-weight:400}
+.pick-h .s em{font-style:normal;font-size:10.5px;font-weight:600;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);padding:2px 4px;margin-right:4px;vertical-align:1px}
+.pick-h .s{flex:1}
+.strip{position:relative}
+.cd-bar{min-height:70px}

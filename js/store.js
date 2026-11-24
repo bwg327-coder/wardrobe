@@ -10,7 +10,7 @@ import { today, dayTs, uid } from './util.js';
 export const S = {
   items:[], records:[], customSubs:[], prefs:{sort:'custom'},
   photoUrls:new Map(),
-  ui:{tab:'wardrobe', cat:'all', q:'', reorder:false, onlyWash:false, sel:{}, editing:null, month:today().slice(0,7), day:today(), delAsk:false, recIdx:0}
+  ui:{tab:'wardrobe', cat:'all', q:'', reorder:false, onlyWash:false, sel:{}, lock:{}, editing:null, month:today().slice(0,7), day:today(), delAsk:false, recIdx:0}
 };
 setPhotoResolver(it=> it && it.hasPhoto ? S.photoUrls.get(it.id)||null : null);
 
@@ -66,6 +66,11 @@ async function migrate(){
     }
     done.add('puffer');
   }
+  // 3) 치노 '카키 1'은 흰색에 가까운 밝은 스톤
+  if(!done.has('khaki1')){
+    S.items.filter(i=>i.cat==='bottom'&&i.colorName==='카키 1'&&i.color==='#b8b09c').forEach(i=>{ i.color='#d2cfc6'; changed.push(i); });
+    done.add('khaki1');
+  }
   if(changed.length) await db.putMany('items',changed);
   await db.put('meta',[...done],'migrations');
 }
@@ -75,7 +80,7 @@ export async function initialize(withSeed){
   const items = withSeed? seedItems() : [];
   if(items.length) await db.putMany('items', items);
   await db.put('meta', {at:Date.now(), dataVersion:DATA_VERSION}, 'initialized');
-  await db.put('meta', ['ochre','puffer'], 'migrations');
+  await db.put('meta', ['ochre','puffer','khaki1'], 'migrations');
   S.items = items; S.firstRun = false; touch();
 }
 

@@ -7,13 +7,13 @@ import { lum } from './garments.js';
 import { today as todayISO } from './util.js';
 
 const TOP_N = 8;
-export function rankOutfits(){
+export function rankOutfits(fixed={}){
   const st=new Map(S.items.map(i=>[i.id,stats(i)]));
   const L=new Map(S.items.map(i=>[i.id,lum(i.color)]));
   const pool={}; for(const k of CATS) pool[k]=S.items.filter(i=>i.cat===k&&st.get(i.id).state!=='due');
   const T=todayISO(); const last=[...S.records].filter(r=>r.date<T).sort((a,b)=>b.date.localeCompare(a.date))[0]?.sel||{};
   const lastIds=new Set(Object.values(last));
-  const opts=k=>pool[k].length?pool[k]:[null];
+  const opts=k=> k in fixed ? [byId(fixed[k])||null] : pool[k].length?pool[k]:[null];
   const own=x=>{ if(!x) return 0; const s=st.get(x.id); return -(s.since/x.wash*1.2 + s.total*.04) - (lastIds.has(x.id)?.35:0); };
   const best=[];
   for(const o of opts('outer'))for(const t of opts('top'))for(const b of opts('bottom'))for(const s of opts('shoes')){
@@ -29,28 +29,28 @@ export function rankOutfits(){
   }
   return {list:best};
 }
-export function recommend(idx=0){
-  const {list}=rankOutfits();
+export function recommend(idx=0, fixed={}){
+  const {list}=rankOutfits(fixed);
   if(!list.length) return {sel:{}, count:0};
   const pick=list[idx%list.length];
   const sel={}; for(const k of CATS) if(pick.sel[k]) sel[k]=pick.sel[k];
   return {sel, count:list.length};
 }
-/* 현재 선택한 조합에 대한 설명 (추천 근거 / 직접 고른 조합의 상태) */
-export function describe(sel, recSel){
+/* 현재 조합 설명. lock: 사용자가 직접 고른 분류, 나머지 채워진 분류는 추천 */
+export function describe(sel, lock={}){
   const t=byId(sel.top), b=byId(sel.bottom), o=byId(sel.outer);
   const ids=CATS.map(k=>sel[k]).filter(id=>byId(id));
   if(!ids.length) return null;
   const tone=[o,t,b].filter(Boolean).map(x=>x.colorName).join(' · ');
   const last=[...S.records].filter(r=>r.date<todayISO()).sort((a,b)=>b.date.localeCompare(a.date))[0]?.sel||{};
   const overlap=ids.filter(id=>Object.values(last).includes(id)).length;
-  const isRec = recSel && CATS.every(k=>(recSel[k]||null)===(sel[k]||null));
+  const locked=CATS.filter(k=>k in lock).length, recN=CATS.filter(k=>!(k in lock)&&byId(sel[k])).length;
   const due=S.items.filter(i=>stats(i).state==='due');
   const dueIn=ids.filter(id=>stats(byId(id)).state==='due').length;
+  const mode = !locked ? '오늘의 추천 · 세탁 후 착장이 적은 옷 우선' : recN ? `고른 옷에 맞춰 ${recN}벌 추천` : '직접 고른 조합';
   return {
     color: (tone||'신발만 선택') + (t&&b? (Math.abs(lum(t.color)-lum(b.color))>.12?' — 상·하의 명도 대비':' — 톤온톤') :''),
-    wear: (isRec?'세탁 후 착장이 적은 의류 우선':'직접 고른 조합') + (overlap?` · 지난 코디와 ${overlap}벌 겹침`:' · 지난 코디와 겹치지 않음'),
-    wash: dueIn? `세탁 권장 의류 ${dueIn}벌 포함` : due.length? `세탁 권장 ${due.length}벌 ${isRec?'제외':'은 선택하지 않음'}` : '세탁 권장 의류 없음',
-    isRec
+    wear: mode + (overlap?` · 지난 코디와 ${overlap}벌 겹침`:' · 지난 코디와 겹치지 않음'),
+    wash: dueIn? `세탁 권장 의류 ${dueIn}벌 포함` : due.length? `세탁 권장 ${due.length}벌 제외` : '세탁 권장 의류 없음',
   };
 }

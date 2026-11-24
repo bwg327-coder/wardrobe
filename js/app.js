@@ -31,16 +31,23 @@ document.addEventListener('visibilitychange',()=>{
   lastDay=t; store.touch(); renderAll();
 });
 
-function resetSel(){ U.recIdx=0; U.sel={...recommend(0).sel}; }
+function resetSel(){ U.recIdx=0; U.sel={}; U.lock={}; }
+/* 사용자가 고른 분류(lock)는 두고, 나머지 분류를 그 옷에 맞춰 추천으로 채운다 */
+function fillRest(idx=0){
+  const r=recommend(idx,{...U.lock});
+  for(const k of CATS) if(!(k in U.lock)){ if(r.sel[k]) U.sel[k]=r.sel[k]; else delete U.sel[k]; }
+  return r;
+}
+const lockAll=()=>{ U.lock={}; for(const k of CATS) U.lock[k]=U.sel[k]||null; };
 
 /* ---------- 클릭 ---------- */
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button'); if(!b || b.disabled) return;
   const d=b.dataset, act=d.act;
   try{
-  if(d.tab){ U.tab=d.tab; if(sheetOpen()) closeSheet(); renderTabs(); $('#main').scrollTop=0; return; }
+  if(d.tab){ U.tab=d.tab; if(sheetOpen()) closeSheet(); renderTabs(); if(U.tab==='coord') renderCoord(); $('#main').scrollTop=0; return; }
   if(d.cat && !act){ U.cat=d.cat; renderWardrobe(); return; }
-  if(d.pick!==undefined){ if(d.id) U.sel[d.pick]=d.id; else delete U.sel[d.pick]; keepY(renderCoord); return; }
+  if(d.pick!==undefined){ const k=d.pick; if(d.id) U.sel[k]=d.id; else delete U.sel[k]; U.lock[k]=d.id||null; U.recIdx=0; fillRest(0); keepY(renderCoord); return; }
   if(d.day){ U.day=d.day; U.delAsk=false; renderLog(); return; }
   if(d.month){ const [y,m]=U.month.split('-').map(Number); const n=new Date(y,m-1+Number(d.month),1); U.month=`${n.getFullYear()}-${pad(n.getMonth()+1)}`; U.day=U.month===today().slice(0,7)?today():U.month+'-01'; U.delAsk=false; renderLog(); return; }
   if(form){
@@ -90,7 +97,11 @@ document.addEventListener('click',async e=>{
       renderAll(); toast(isNew?'옷장에 등록했습니다':'수정했습니다'); break;
     }
 
-    case 'recommend': { const r=recommend(++U.recIdx); U.sel={...r.sel}; renderCoord(); toast(r.count>1?`추천 ${((U.recIdx)%r.count)+1}/${r.count} · 컬러 · 착장 빈도 · 세탁 상태 기준`:'컬러 · 착장 빈도 · 세탁 상태로 추천했습니다'); break; }
+    case 'rec-all': { U.lock={}; U.recIdx=0; const r=fillRest(0); renderCoord(); $('#main').scrollTop=0; toast(r.count?'세탁 주기 · 최근 코디 · 컬러 조합으로 오늘의 코디를 골랐습니다':'추천할 수 있는 옷이 없습니다 · 세탁 권장 상태를 확인해 주세요'); break; }
+    case 'recommend': {
+      if(CATS.every(k=>k in U.lock)){ toast('모든 분류를 직접 골랐습니다 · 초기화하면 다시 추천받을 수 있습니다'); break; }
+      const r=fillRest(++U.recIdx); renderCoord(); toast(r.count>1?`다른 추천 ${(U.recIdx%r.count)+1}/${r.count}`:'다른 조합이 없습니다'); break; }
+    case 'sel-clear': resetSel(); keepY(renderCoord); break;
     case 'confirm': {
       const date=U.editing||today();
       const replaced=await store.confirmRecord(date,U.sel);
@@ -98,9 +109,9 @@ document.addEventListener('click',async e=>{
       U.editing=null; U.month=date.slice(0,7); U.day=date; renderAll(); break;
     }
     case 'cancel-edit': U.editing=null; resetSel(); renderCoord(); break;
-    case 'rewear': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; U.editing=null; U.tab='coord'; renderAll(); $('#main').scrollTop=0; toast('이전 코디를 불러왔습니다. 확정하면 오늘 기록이 됩니다'); break; }
-    case 'edit-rec': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; U.editing=U.day; U.tab='coord'; renderAll(); $('#main').scrollTop=0; break; }
-    case 'add-rec': U.editing=U.day===today()?null:U.day; if(U.editing) U.sel={}; U.tab='coord'; renderAll(); $('#main').scrollTop=0; break;
+    case 'rewear': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; lockAll(); U.editing=null; U.tab='coord'; renderAll(); $('#main').scrollTop=0; toast('이전 코디를 불러왔습니다. 확정하면 오늘 기록이 됩니다'); break; }
+    case 'edit-rec': { const r=recordOn(U.day); U.sel={...r.sel}; for(const k of CATS) if(!byId(U.sel[k])) delete U.sel[k]; lockAll(); U.editing=U.day; U.tab='coord'; renderAll(); $('#main').scrollTop=0; break; }
+    case 'add-rec': U.editing=U.day===today()?null:U.day; if(U.editing) resetSel(); U.tab='coord'; renderAll(); $('#main').scrollTop=0; break;
     case 'month-today': U.month=today().slice(0,7); U.day=today(); U.delAsk=false; renderLog(); break;
     case 'del-rec': U.delAsk=true; renderLog(); break;
     case 'del-no': U.delAsk=false; renderLog(); break;
