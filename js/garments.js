@@ -164,6 +164,19 @@ function tPuffer(c,flat){
   const pull=`<rect x="138" y="96" width="4" height="9" rx="1.5" fill="#3a3a3a" stroke="${LC}" stroke-width=".5" ${NS}/>`;
   return {back, front:sleeve()+MIR(sleeve())+panel()+MIR(panel())+col()+MIR(col())+pull};
 }
+function tMac(c,flat){
+  /* 맥코트: 싱글 브레스트 · 노치 라펠 · 무릎 길이 · 3버튼 · 사선 웰트 포켓 · 뒤 트임 없는 깔끔한 실루엣 */
+  const back = `<path d="M126,72 Q150,64 174,72 L150,138 Z" fill="${innerC(c,flat)}" stroke="${edgeC(c)}" stroke-width="1" ${NS}/>`
+    + piece('M121,74 Q150,60 179,74 L177,82 Q150,72 123,82 Z',shade(c,-.12),'');
+  const sleeve=coatSleeve(c,flat);
+  let btn=''; for(const y of [160,196,232]) btn+=dot(150,y,c,2.3);
+  const body=piece('M126,72 L150,138 L174,72 C186,74 194,78 200,84 C204,150 207,230 210,318 L90,318 C93,230 96,150 100,84 C106,78 114,74 126,72 Z',c,'',
+      seam('M155,138 L157,318',LC,.9)+seam('M91,309 H209',LC,.5)+btn
+      +seam('M108,232 L119,262',LC,.9)+seam('M110,231 L121,261',LC,.4)+seam('M192,232 L181,262',LC,.9)+seam('M190,231 L179,261',LC,.4)
+      +seam('M126,72 Q114,96 99,118',LC,.5)+seam('M174,72 Q186,96 201,118',LC,.5));
+  const lapel=()=>piece('M126,72 L150,138 L140,128 L112,96 L121,92 L117,82 Z',c,'',seam('M117,82 L121,92',LC,.7)+seam('M121,92 L112,96',LC,.4));
+  return {back, front:sleeve()+MIR(sleeve())+body+lapel()+MIR(lapel())};
+}
 function tCardigan(c,flat){
   const sleeve=longSleeve(c,flat,234,'rib');
   let btn='';for(const y of [152,172,192,212])btn+=dot(150,y,c,1.8);
@@ -199,6 +212,7 @@ function tpl(it,flat){
   switch(it.t){
     case 'balmacaan': return tCoat(c,flat);
     case 'double': return tDouble(c,flat);
+    case 'mac': return tMac(c,flat);
     case 'ma1': case 'harrington': case 'denimjk': return tBlouson(c,flat,it.t);
     case 'cardigan': return tCardigan(c,flat);
     case 'windbreaker': return tWindbreaker(c,flat);
@@ -211,7 +225,7 @@ function tpl(it,flat){
   }
   return {back:'',front:''};
 }
-const BB={puffer:[60,44,240,254],windbreaker:[66,50,234,246],balmacaan:[64,58,236,320],double:[64,58,236,326],ma1:[66,58,234,232],harrington:[66,56,234,232],denimjk:[66,58,234,232],cardigan:[74,66,226,240],
+const BB={mac:[64,58,236,324],puffer:[60,44,240,254],windbreaker:[66,50,234,246],balmacaan:[64,58,236,320],double:[64,58,236,326],ma1:[66,58,234,232],harrington:[66,56,234,232],denimjk:[66,58,234,232],cardigan:[74,66,226,240],
   tee:[74,66,226,232],henley:[74,66,226,234],shirt:[74,66,226,240],sweat:[74,66,226,234],hoodie:[74,32,226,234],knit:[74,66,226,234],chino:[96,198,204,378],denim:[96,198,204,378],slacks:[96,198,204,378]};
 function bb(it,flat){
   let b=BB[it.t];
@@ -227,7 +241,7 @@ function fit(b,slot,r=0,maxS=9){
 
 /* ---------- 도식화 형태 목록 (세부 유형이 재사용하는 기본 형태) ---------- */
 export const SHAPES = {
-  outer:[['balmacaan','발마칸 코트'],['double','더블 코트'],['ma1','MA-1 블루종'],['harrington','해링턴 자켓'],['denimjk','데님 자켓'],['windbreaker','바람막이'],['puffer','패딩'],['cardigan','가디건']],
+  outer:[['balmacaan','발마칸 코트'],['double','더블 코트'],['mac','맥코트'],['ma1','MA-1 블루종'],['harrington','해링턴 자켓'],['denimjk','데님 자켓'],['windbreaker','바람막이'],['puffer','패딩'],['cardigan','가디건']],
   top:[['tee','티셔츠'],['henley','롱슬리브'],['shirt','셔츠'],['sweat','스웨트셔츠'],['hoodie','후디'],['knit','니트']],
   bottom:[['chino','치노'],['denim','데님'],['slacks','슬랙스']],
   shoes:[['sneaker','스니커즈'],['dress','구두'],['derby','더비 슈즈']],
