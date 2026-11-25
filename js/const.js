@@ -1,5 +1,5 @@
 /* 공통 상수 */
-export const APP_VERSION = '1.9.1';
+export const APP_VERSION = '1.9.2';
 export const DATA_VERSION = 1;
 export const CAT = {outer:'아우터', top:'상의', bottom:'하의', shoes:'신발'};
 export const CATS = ['outer','top','bottom','shoes'];

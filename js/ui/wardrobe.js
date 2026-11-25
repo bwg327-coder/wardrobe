@@ -66,7 +66,7 @@ export function renderList(){
     rows += u.reorder
       ? `<div class="row gx edit" data-id="${i.id}" data-cat="${i.cat}">${body}<button class="handle" aria-label="${esc(i.name)} ${esc(i.colorName)} 순서 이동, 위아래 화살표로 이동">${IC.grip}</button></div>`
       : `<button class="row gx" data-act="detail" data-id="${i.id}">${body}
-      <div class="cnt"><b>${s.total}<small>회</small></b><span class="since">${i.wash?`세탁 후 ${s.since}/${i.wash}`:`세탁 후 ${s.since}회`}</span>
+      <div class="cnt"><span class="since">세탁 후</span><b>${s.since}<small>${i.wash?'/'+i.wash:'회'}</small></b><span class="since">누적 ${s.total}회</span>
         ${s.state==='due'?'<span class="tag tag-due">세탁 권장</span>':s.state==='soon'?'<span class="tag tag-soon">세탁 임박</span>':''}</div></button>`;
   }
   $('#list').innerHTML = list.length? rows : `<div class="empty">조건에 맞는 의류가 없습니다.</div>`;

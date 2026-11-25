@@ -15,7 +15,7 @@ export function sheetDetail(id,ask=false){
     <div class="det-top"><div class="ph">${thumb(i)}</div>
       <div class="info"><div class="meta">${CAT[i.cat]} · ${esc(i.sub)}</div>${i.brand?`<div class="brand">${esc(i.brand)}</div>`:''}<div class="name">${esc(i.name)}</div>
       <div class="color"><i class="sw" style="background:${i.color}"></i>${esc(i.colorName)}</div>
-      <div class="det-big"><div><b>${s.total}</b><span>누적 착장</span></div><div><b>${s.since}</b><span>세탁 후 착장</span></div></div>
+      <div class="det-big"><div><b>${s.since}</b><span>세탁 후 착장</span></div><div><b>${s.total}</b><span>누적 착장</span></div></div>
       ${i.wash?`<div class="bar" aria-hidden="true"><i style="width:${Math.min(100,s.since/i.wash*100)}%"></i></div>`:''}
       <div class="f-hint">${!i.wash?'세탁 기준 없음 · 알림을 표시하지 않습니다':s.state==='due'?'세탁 기준에 도달했습니다':s.state==='soon'?'다음 착용 후 세탁 권장':`세탁까지 ${i.wash-s.since}회 남음`}</div></div></div>
     <dl class="kv" style="margin:0">
@@ -86,8 +86,8 @@ export function drawForm(keep=true){
       <div class="f-hint">${f.wash?`${f.wash}회 착용하면 세탁 권장 알림을 표시합니다.`:'세탁 알림 없이 착장 횟수만 기록합니다. 세탁 필요순에서는 맨 뒤에 놓입니다.'}</div></div>
     <details class="f more"${f.base||f.baseSince?' open':''}><summary>앱 사용 전 착장 횟수</summary>
       <div class="f-2">
-        <div><span class="lbl">누적 착장</span>${stepper('base',f.base,...STEP.base,'누적 착장')}</div>
         <div><span class="lbl">마지막 세탁 후</span>${stepper('baseSince',f.baseSince,...STEP.baseSince,'마지막 세탁 후 착장')}</div>
+        <div><span class="lbl">누적 착장</span>${stepper('base',f.base,...STEP.base,'누적 착장')}</div>
       </div>
       <div class="f-hint">앱에 기록하기 전의 착장 횟수를 더합니다. 세탁 완료를 누르면 ‘마지막 세탁 후’는 0이 됩니다.</div>
     </details>
